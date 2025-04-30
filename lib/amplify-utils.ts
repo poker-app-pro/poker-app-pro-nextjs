@@ -6,7 +6,7 @@ import {
 import { cookies } from "next/headers";
 import { createServerRunner } from "@aws-amplify/adapter-nextjs";
 import amplifyConfig from "@/amplify_outputs.json";
-import { Schema } from "../../poker-app-pro/amplify/data/resource";
+import { Schema } from "@/amplify/data/resource";
 
 export const { runWithAmplifyServerContext } = createServerRunner({
   config: amplifyConfig,
