@@ -380,7 +380,7 @@ export default function CreateSeriesPage() {
                 Points System
                 <div className="relative group">
                   <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                  <div className="absolute left-full ml-2 top-0 w-64 p-2 bg-white border border-border rounded shadow-md hidden group-hover:block z-10 text-xs">
+                  <div className="absolute left-full ml-2 top-0 w-64 p-2 bg-white border border-gray-200 rounded shadow-md hidden group-hover:block z-10 text-xs">
                     <p>
                       <strong>Standard:</strong> 1st: 100pts, 2nd: 90pts,
                       decreasing by 10 for each position
@@ -441,7 +441,7 @@ export default function CreateSeriesPage() {
                 type="checkbox"
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
-                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                className="h-4 w-4 rounded border-gray-200 text-primary focus:ring-primary"
                 disabled={state === "submitting"}
               />
               <label

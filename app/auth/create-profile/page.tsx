@@ -136,7 +136,7 @@ export default function CreateProfilePage() {
                         type="checkbox"
                         checked={preferredGameTypes.includes(gameType)}
                         onChange={() => toggleGameType(gameType)}
-                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                        className="h-4 w-4 rounded border-gray-200 text-primary focus:ring-primary"
                         disabled={state === "submitting"}
                       />
                       <label htmlFor={`game-${gameType}`} className="ml-2 text-sm text-foreground">

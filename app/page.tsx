@@ -1,7 +1,7 @@
-import { AppLayout } from "@/components/layout/app-layout"
-import { FloatingActionButton } from "@/components/ui/floating-action-button"
-import { Trophy, Calendar, Users, Plus, ChevronRight } from "lucide-react"
-import Link from "next/link"
+import { AppLayout } from "@/components/layout/app-layout";
+import { FloatingActionButton } from "@/components/ui/floating-action-button";
+import { Trophy, Calendar, Users, Plus, ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 export default function DashboardPage() {
   return (
@@ -9,7 +9,9 @@ export default function DashboardPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-medium">Leagues Dashboard</h1>
-          <p className="text-muted-foreground">Manage your poker leagues and assign organizers</p>
+          <p className="text-muted-foreground">
+            Manage your poker leagues and assign organizers
+          </p>
         </div>
         <Link href="/leagues/create">
           <button className="material-button-primary bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
@@ -73,7 +75,9 @@ export default function DashboardPage() {
         <div className="material-card">
           <div className="material-card-header">
             <h2 className="material-card-title">Active Leagues</h2>
-            <p className="material-card-subtitle">Leagues currently in progress</p>
+            <p className="material-card-subtitle">
+              Leagues currently in progress
+            </p>
           </div>
           <div className="material-card-content">
             <table className="material-data-table">
@@ -88,14 +92,20 @@ export default function DashboardPage() {
               <tbody>
                 {[1, 2, 3, 4].map((i) => (
                   <tr key={i}>
-                    <td className="font-medium">Texas Hold&apos;em League {i}</td>
+                    <td className="font-medium">
+                      Texas Hold&apos;em League {i}
+                    </td>
                     <td>{Math.floor(Math.random() * 3) + 1} organizers</td>
                     <td>
-                      <span className="material-chip bg-primary/10 text-primary">Active</span>
+                      <span className="material-chip bg-primary/10 text-primary">
+                        Active
+                      </span>
                     </td>
                     <td>
                       <Link href={`/leagues/${i}`}>
-                        <button className="material-button-secondary text-sm py-1">Manage</button>
+                        <button className="material-button-secondary text-sm py-1">
+                          Manage
+                        </button>
                       </Link>
                     </td>
                   </tr>
@@ -108,19 +118,28 @@ export default function DashboardPage() {
         <div className="material-card">
           <div className="material-card-header">
             <h2 className="material-card-title">Upcoming Tournaments</h2>
-            <p className="material-card-subtitle">Tournaments scheduled in the next 30 days</p>
+            <p className="material-card-subtitle">
+              Tournaments scheduled in the next 30 days
+            </p>
           </div>
           <div className="material-card-content">
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center justify-between pb-4 border-b border-border">
+                <div
+                  key={i}
+                  className="flex items-center justify-between pb-4 border-b border-gray-200"
+                >
                   <div>
-                    <h3 className="font-medium">Summer Series Tournament #{i}</h3>
+                    <h3 className="font-medium">
+                      Summer Series Tournament #{i}
+                    </h3>
                     <p className="text-sm text-muted-foreground">
-                      {new Date(Date.now() + i * 86400000 * 3).toLocaleDateString()}
+                      {new Date(
+                        Date.now() + i * 86400000 * 3
+                      ).toLocaleDateString()}
                     </p>
                   </div>
-                  <Link href={`/tournaments/${i}`}>
+                  <Link href={`/results/${i}`}>
                     <button className="material-button-secondary text-sm py-1 flex items-center gap-1">
                       View
                       <ChevronRight className="h-4 w-4" />
@@ -131,33 +150,16 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="material-card-actions">
-            <Link href="/tournaments">
-              <button className="material-button-secondary text-sm">View All Tournaments</button>
+            <Link href="/results">
+              <button className="material-button-secondary text-sm">
+                View All Tournaments
+              </button>
             </Link>
           </div>
         </div>
       </div>
 
-      <FloatingActionButton
-        actions={[
-          {
-            label: "New Tournament",
-            icon: <Trophy className="h-4 w-4" />,
-            href: "/tournaments/create",
-            primary: true,
-          },
-          {
-            label: "New Season",
-            icon: <Calendar className="h-4 w-4" />,
-            href: "/seasons/create",
-          },
-          {
-            label: "New League",
-            icon: <Trophy className="h-4 w-4" />,
-            href: "/leagues/create",
-          },
-        ]}
-      />
+      <FloatingActionButton />
     </AppLayout>
-  )
+  );
 }

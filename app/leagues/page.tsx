@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import LeaguesList from "./_components/leagues-list";
 import { Plus, Search } from "lucide-react";
+import { FloatingActionButton } from "@/components/ui/floating-action-button";
 
 export default function LeaguesPage() {
   return (
@@ -40,6 +41,7 @@ export default function LeaguesPage() {
 
         <LeaguesList />
       </div>
+      <FloatingActionButton />
     </AppLayout>
   );
 }

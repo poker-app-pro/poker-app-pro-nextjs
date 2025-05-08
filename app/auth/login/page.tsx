@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Trophy, Loader2, AlertCircle } from "lucide-react";
 import { signIn } from "aws-amplify/auth";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const { createSession } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,11 +26,12 @@ export default function LoginPage() {
     try {
       // Simulate API call
       await signIn({ username: email, password });
+      await createSession();
 
       // For demo purposes, navigate to dashboard
-      router.push("/");
+      router.push("/results");
     } catch (err) {
-      console.log(err)
+      console.log(err);
       setError("Invalid email or password");
     } finally {
       setIsLoading(false);
@@ -103,7 +106,7 @@ export default function LoginPage() {
               <input
                 id="remember"
                 type="checkbox"
-                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                className="h-4 w-4 rounded border-gray-200 text-primary focus:ring-primary"
                 disabled={isLoading}
               />
               <label

@@ -5,6 +5,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { HierarchyProvider } from "@/contexts/hierarchy-context";
 import AmplifyClientSide from "@/components/AmplifyClient";
+import { AuthProvider } from "@/contexts/auth-context";
 
 const roboto = Roboto({
   subsets: ["latin"],
@@ -26,11 +27,13 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${roboto.className} ${roboto.variable}`}>
         <AmplifyClientSide>
-          <ThemeProvider attribute="class" defaultTheme="light">
-            <HierarchyProvider>
-              <main className="flex-1 overflow-y-auto">{children}</main>
-            </HierarchyProvider>
-          </ThemeProvider>
+          <AuthProvider>
+            <ThemeProvider attribute="class" defaultTheme="light">
+              <HierarchyProvider>
+                <main className="flex-1 overflow-y-auto">{children}</main>
+              </HierarchyProvider>
+            </ThemeProvider>
+          </AuthProvider>
         </AmplifyClientSide>
       </body>
     </html>

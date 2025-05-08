@@ -1,4 +1,5 @@
 import { AppLayout } from "@/components/layout/app-layout"
+import { FloatingActionButton } from "@/components/ui/floating-action-button"
 import { Star, Plus, ChevronRight, Search } from "lucide-react"
 import Link from "next/link"
 
@@ -109,6 +110,7 @@ export default function SeriesPage() {
           </Link>
         </div>
       </div>
+      <FloatingActionButton />
     </AppLayout>
   )
 }

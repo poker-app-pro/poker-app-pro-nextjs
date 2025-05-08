@@ -170,7 +170,7 @@ export default function CreateLeaguePage() {
                 type="checkbox"
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
-                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                className="h-4 w-4 rounded border-gray-200 text-primary focus:ring-primary"
                 disabled={state === "submitting"}
               />
               <label

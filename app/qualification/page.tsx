@@ -1,14 +1,22 @@
 import { AppLayout } from "@/components/layout/app-layout"
-import { Search, Trophy } from "lucide-react"
+import { FloatingActionButton } from "@/components/ui/floating-action-button"
+import { Search, Trophy, Calendar, Users, BarChart2 } from "lucide-react"
+import Link from "next/link"
 
-export default function QualificationPage() {
+export default function SeasonEventPage() {
   return (
-    <AppLayout title="Main Event Qualification">
+    <AppLayout title="Season Event">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-medium">Main Event Qualification</h1>
+          <h1 className="text-2xl font-medium">Season Event</h1>
           <p className="text-muted-foreground">Track players who qualify for the season finale</p>
         </div>
+        <Link href="/qualification/record">
+          <button className="material-button-primary text-white bg-blue-600 hover:bg-blue-700 flex items-center gap-2">
+            <Trophy className="h-4 w-4" />
+            Record Results
+          </button>
+        </Link>
       </div>
 
       <div className="flex items-center gap-4 mb-6">
@@ -30,7 +38,7 @@ export default function QualificationPage() {
             <Trophy className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h3 className="font-medium text-lg">Summer Season 2023 - Main Event</h3>
+            <h3 className="font-medium text-lg">Summer Season 2023 - Season Event</h3>
             <p className="text-sm text-muted-foreground">Scheduled for August 15, 2023 | 32 player cap</p>
           </div>
         </div>
@@ -53,7 +61,7 @@ export default function QualificationPage() {
                 <span className="text-sm font-medium">24/32</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm">Series Winners:</span>
+                <span className="text-sm">Tournament Winners:</span>
                 <span className="text-sm font-medium">8</span>
               </div>
               <div className="flex justify-between">
@@ -68,16 +76,15 @@ export default function QualificationPage() {
           </div>
         </div>
 
+        <h3 className="font-medium mb-3">Qualified Players</h3>
         <div className="overflow-x-auto">
           <table className="material-data-table">
             <thead>
               <tr>
                 <th>Player</th>
-                <th>Qualification Method</th>
-                <th>Series</th>
-                <th>Total Points</th>
                 <th>Tournaments</th>
-                <th>Status</th>
+                <th>Total Chips</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -91,41 +98,12 @@ export default function QualificationPage() {
                       <span>Player {String.fromCharCode(65 + i)}</span>
                     </div>
                   </td>
-                  <td>
-                    {i < 3 ? (
-                      <span className="material-chip bg-primary-50 text-primary">Tournament Winner</span>
-                    ) : i < 8 ? (
-                      <span className="material-chip bg-accent text-primary">Top 10 Finish</span>
-                    ) : (
-                      <span className="material-chip">Season Points</span>
-                    )}
-                  </td>
-                  <td>{i % 2 === 0 ? "Beginner Series" : "Advanced Series"}</td>
-                  <td>{Math.floor(Math.random() * 500) + 300}</td>
                   <td>{Math.floor(Math.random() * 4) + 3}</td>
+                  <td>{Math.floor(Math.random() * 50000) + 10000}</td>
                   <td>
-                    <span className="material-chip bg-primary-50 text-primary">Qualified</span>
-                  </td>
-                </tr>
-              ))}
-              {Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i + 10}>
-                  <td>
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                        {String.fromCharCode(75 + i)}
-                      </div>
-                      <span>Player {String.fromCharCode(75 + i)}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className="material-chip bg-muted text-muted-foreground">Pending</span>
-                  </td>
-                  <td>{i % 2 === 0 ? "Beginner Series" : "Advanced Series"}</td>
-                  <td>{Math.floor(Math.random() * 300) + 200}</td>
-                  <td>{Math.floor(Math.random() * 3) + 1}</td>
-                  <td>
-                    <span className="material-chip bg-accent text-primary">On Waitlist</span>
+                    <Link href={`/players/${i + 1}`}>
+                      <button className="material-button-secondary text-sm py-1">View Profile</button>
+                    </Link>
                   </td>
                 </tr>
               ))}
@@ -133,6 +111,74 @@ export default function QualificationPage() {
           </table>
         </div>
       </div>
+
+      <div className="material-card">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="h-12 w-12 rounded-full bg-primary-50 flex items-center justify-center">
+            <BarChart2 className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-medium text-lg">Previous Season Events</h3>
+            <p className="text-sm text-muted-foreground">Historical results from past season finales</p>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {[1, 2].map((seasonId) => (
+            <div key={seasonId} className="border-t border-gray-200 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  {seasonId === 1 ? "Spring Season 2023" : "Winter Season 2022"} - Season Event
+                </h4>
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Users className="h-4 w-4 mr-1" />
+                  <span>32 players</span>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="material-data-table">
+                  <thead>
+                    <tr>
+                      <th>Position</th>
+                      <th>Player</th>
+                      <th>Starting Chips</th>
+                      <th>Prize</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i}>
+                        <td className="w-16 text-center">{i + 1}</td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-50 text-primary">
+                              {String.fromCharCode(70 + i)}
+                            </div>
+                            <Link href={`/players/${i + 10}`} className="hover:text-primary">
+                              Player {String.fromCharCode(70 + i)}
+                            </Link>
+                          </div>
+                        </td>
+                        <td>{Math.floor(Math.random() * 30000) + 20000}</td>
+                        <td>{i === 0 ? "$1,200" : i === 1 ? "$800" : i === 2 ? "$500" : i === 3 ? "$300" : "$200"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-2 text-right">
+                <Link href={`/qualification/history/${seasonId}`}>
+                  <button className="material-button-secondary text-sm">View Full Results</button>
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <FloatingActionButton />
     </AppLayout>
   )
 }

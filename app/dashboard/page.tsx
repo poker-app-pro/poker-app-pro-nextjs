@@ -113,14 +113,14 @@ export default function DashboardPage() {
           <div className="material-card-content">
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center justify-between pb-4 border-b border-border">
+                <div key={i} className="flex items-center justify-between pb-4 border-b border-gray-200">
                   <div>
                     <h3 className="font-medium">Summer Series Tournament #{i}</h3>
                     <p className="text-sm text-muted-foreground">
                       {new Date(Date.now() + i * 86400000 * 3).toLocaleDateString()}
                     </p>
                   </div>
-                  <Link href={`/tournaments/${i}`}>
+                  <Link href={`/results/${i}`}>
                     <button className="material-button-secondary text-sm py-1 flex items-center gap-1">
                       View
                       <ChevronRight className="h-4 w-4" />
@@ -131,33 +131,14 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="material-card-actions">
-            <Link href="/tournaments">
+            <Link href="/results">
               <button className="material-button-secondary text-sm">View All Tournaments</button>
             </Link>
           </div>
         </div>
       </div>
 
-      <FloatingActionButton
-        actions={[
-          {
-            label: "New Tournament",
-            icon: <Trophy className="h-4 w-4" />,
-            href: "/tournaments/create",
-            primary: true,
-          },
-          {
-            label: "New Season",
-            icon: <Calendar className="h-4 w-4" />,
-            href: "/seasons/create",
-          },
-          {
-            label: "New League",
-            icon: <Trophy className="h-4 w-4" />,
-            href: "/leagues/create",
-          },
-        ]}
-      />
+      <FloatingActionButton />
     </AppLayout>
   )
 }
