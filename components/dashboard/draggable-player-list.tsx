@@ -11,9 +11,10 @@ interface Player {
 interface DraggablePlayerListProps {
   players: Player[]
   onPlayersChange: (players: Player[]) => void
+  onRemovePlayer?: (player: Player) => void
 }
 
-export function DraggablePlayerList({ players, onPlayersChange }: DraggablePlayerListProps) {
+export function DraggablePlayerList({ players, onPlayersChange, onRemovePlayer }: DraggablePlayerListProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDragEnd = (result: any) => {
     if (!result.destination) return
@@ -26,7 +27,12 @@ export function DraggablePlayerList({ players, onPlayersChange }: DraggablePlaye
   }
 
   const removePlayer = (id: string) => {
-    onPlayersChange(players.filter((player) => player.id !== id))
+    const player = players.find((p) => p.id === id)
+    if (player && onRemovePlayer) {
+      onRemovePlayer(player)
+    } else {
+      onPlayersChange(players.filter((player) => player.id !== id))
+    }
   }
 
   return (
@@ -40,7 +46,7 @@ export function DraggablePlayerList({ players, onPlayersChange }: DraggablePlaye
                   <div
                     ref={provided.innerRef}
                     {...provided.draggableProps}
-                    className="flex items-center justify-between bg-white border border-border rounded-md p-3"
+                    className="flex items-center justify-between bg-white border border-gray-200 rounded-md p-3"
                   >
                     <div className="flex items-center">
                       <div {...provided.dragHandleProps} className="mr-3 cursor-grab">
@@ -69,7 +75,7 @@ export function DraggablePlayerList({ players, onPlayersChange }: DraggablePlaye
             ))}
             {provided.placeholder}
             {players.length === 0 && (
-              <div className="text-center py-8 border border-dashed border-border rounded-md">
+              <div className="text-center py-8 border border-dashed border-gray-200 rounded-md">
                 <p className="text-muted-foreground">No players added yet</p>
                 <p className="text-sm text-muted-foreground">Use the search box above to add players</p>
               </div>

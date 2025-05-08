@@ -16,12 +16,14 @@ import { Sidebar } from "@/components/dashboard/sidebar"
 interface HeaderProps {
   userRole: "admin" | "organizer"
   userName: string
+  sidebarOpen: boolean
+  setSidebarOpen: (open: boolean) => void
 }
 
-export function Header({ userRole, userName }: HeaderProps) {
+export function Header({ userRole, userName, sidebarOpen, setSidebarOpen }: HeaderProps) {
   return (
-    <header className="h-16 border-b bg-card border-gray-200 dark:border-gray-700  flex items-center px-4 md:px-6">
-      <Sheet>
+    <header className="h-16 border-b bg-card flex items-center px-4 md:px-6">
+      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="md:hidden">
             <Menu className="h-5 w-5" />
@@ -29,7 +31,7 @@ export function Header({ userRole, userName }: HeaderProps) {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="p-0">
-          <Sidebar userRole={userRole} />
+          <Sidebar userRole={userRole} onNavigate={() => setSidebarOpen(false)} />
         </SheetContent>
       </Sheet>
 

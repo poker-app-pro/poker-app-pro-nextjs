@@ -103,7 +103,7 @@ export function PlayerAutoSuggest({
       {isOpen && filteredPlayers.length > 0 && (
         <div
           ref={dropdownRef}
-          className="absolute z-10 mt-1 w-full bg-white border border-border rounded-md shadow-lg max-h-60 overflow-auto"
+          className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto"
         >
           {filteredPlayers.map((player) => (
             <div

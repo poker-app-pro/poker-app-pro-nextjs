@@ -1,4 +1,5 @@
 import { AppLayout } from "@/components/layout/app-layout"
+import { FloatingActionButton } from "@/components/ui/floating-action-button"
 import { Users, Search, Filter } from "lucide-react"
 import Link from "next/link"
 
@@ -96,6 +97,7 @@ export default function PlayersPage() {
           </div>
         </div>
       </div>
+      <FloatingActionButton />
     </AppLayout>
   )
 }

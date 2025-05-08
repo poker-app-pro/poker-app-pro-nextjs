@@ -122,7 +122,7 @@ export default function StandingsPage() {
                   </div>
 
                   <div className="mt-2 text-right">
-                    <Link href={`/scoreboards/${series.id}`}>
+                    <Link href={`/standings/${series.id}`}>
                       <button className="material-button-secondary text-sm">View Full Standings</button>
                     </Link>
                   </div>

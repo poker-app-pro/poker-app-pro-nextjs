@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -13,7 +13,7 @@ import {
   Users,
   BarChart2,
   LogOut,
-  Star,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HierarchyHeader } from "./hierarchy-header";
@@ -33,12 +33,54 @@ export function AppLayout({
   breadcrumbs,
 }: AppLayoutProps) {
   const pathname = usePathname();
-  const [drawerOpen, setDrawerOpen] = useState(true);
   const router = useRouter();
+
+  // Default to closed on mobile, open on desktop
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Check screen size on mount and window resize
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setDrawerOpen(window.innerWidth >= 768); // 768px is typical md breakpoint
+    };
+
+    // Set initial state
+    checkScreenSize();
+
+    // Add event listener for resize
+    window.addEventListener("resize", checkScreenSize);
+
+    // Cleanup
+    return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
+
+  // Find the navItems array and update it to match the new sidebar structure
   const navItems = [
     {
-      name: "Leagues Dashboard",
-      href: "/",
+      name: "Results",
+      href: "/results",
+      icon: Trophy,
+      roles: ["admin", "organizer"],
+    },
+    {
+      name: "Standings",
+      href: "/standings",
+      icon: BarChart2,
+      roles: ["admin", "organizer"],
+    },
+    {
+      name: "Season Event",
+      href: "/qualification",
+      icon: Calendar,
+      roles: ["admin", "organizer"],
+    },
+  ];
+
+  const settingsItems = [
+    {
+      name: "Leagues",
+      href: "/leagues",
       icon: Trophy,
       roles: ["admin", "organizer"],
     },
@@ -51,13 +93,7 @@ export function AppLayout({
     {
       name: "Series",
       href: "/series",
-      icon: Star,
-      roles: ["admin", "organizer"],
-    },
-    {
-      name: "Tournaments",
-      href: "/tournaments",
-      icon: Trophy,
+      icon: Calendar,
       roles: ["admin", "organizer"],
     },
     {
@@ -65,19 +101,7 @@ export function AppLayout({
       href: "/players",
       icon: Users,
       roles: ["admin", "organizer"],
-    },
-    {
-      name: "Scoreboards",
-      href: "/scoreboards",
-      icon: BarChart2,
-      roles: ["admin", "organizer"],
-    },
-    {
-      name: "Main Event Qualification",
-      href: "/qualification",
-      icon: Star,
-      roles: ["admin", "organizer"],
-    },
+    }, 
   ];
 
   const filteredNavItems = navItems.filter((item) =>
@@ -89,8 +113,15 @@ export function AppLayout({
     router.push("/auth/login");
   };
 
+  const handleNavigation = () => {
+    // Close drawer on mobile when navigation occurs
+    if (window.innerWidth < 768) {
+      setDrawerOpen(false);
+    }
+  };
+
   return (
-    <div className="flex h-screen ">
+    <div className="flex h-screen">
       {/* Drawer */}
       <div
         className={cn(
@@ -108,7 +139,7 @@ export function AppLayout({
           </button>
         </div>
         <div className="p-2 flex flex-col justify-between pb-20 h-full">
-          <div className="material-divider">
+          <div className="space-y-1">
             {filteredNavItems.map((item) => (
               <Link
                 key={item.href}
@@ -117,11 +148,55 @@ export function AppLayout({
                   "material-drawer-item",
                   pathname === item.href && "active"
                 )}
+                onClick={handleNavigation}
               >
                 <item.icon className="h-5 w-5" />
                 <span>{item.name}</span>
               </Link>
             ))}
+
+            {/* Settings dropdown */}
+            <div className="mt-4">
+              <button
+                className={cn(
+                  "material-drawer-item w-full text-left flex justify-between",
+                  settingsOpen && "bg-secondary"
+                )}
+                onClick={() => setSettingsOpen(!settingsOpen)}
+              >
+                <div className="flex items-center">
+                  <Settings className="h-5 w-5" />
+                  <span className="ml-3">Settings</span>
+                </div>
+                <ChevronLeft
+                  className={cn(
+                    "h-5 w-5 transition-transform",
+                    settingsOpen ? "rotate-90" : "-rotate-90"
+                  )}
+                />
+              </button>
+
+              {settingsOpen && (
+                <div className="pl-4 space-y-1 mt-1">
+                  {settingsItems
+                    .filter((item) => item.roles.includes(userRole))
+                    .map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                          "material-drawer-item",
+                          pathname === item.href && "active"
+                        )}
+                        onClick={handleNavigation}
+                      >
+                        <item.icon className="h-5 w-5" />
+                        <span>{item.name}</span>
+                      </Link>
+                    ))}
+                </div>
+              )}
+            </div>
           </div>
           <button
             onClick={handleLogout}

@@ -1,23 +1,31 @@
 "use client"
 
-import type React from "react"
-
-import { Plus } from "lucide-react"
+import { Plus, BarChart2, Settings } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
-interface FloatingActionButtonProps {
-  actions: {
-    label: string
-    icon?: React.ReactNode
-    href: string
-    primary?: boolean
-  }[]
-}
-
-export function FloatingActionButton({ actions }: FloatingActionButtonProps) {
+export function FloatingActionButton() {
   const [isOpen, setIsOpen] = useState(false)
+
+  const actions = [
+    {
+      label: "Record Results",
+      icon: <Plus className="h-4 w-4" />,
+      href: "/results/create",
+      primary: true,
+    },
+    {
+      label: "View Standings",
+      icon: <BarChart2 className="h-4 w-4" />,
+      href: "/standings",
+    },
+    {
+      label: "Settings",
+      icon: <Settings className="h-4 w-4" />,
+      href: "/settings",
+    },
+  ]
 
   return (
     <div className="fixed bottom-6 right-6 z-50">

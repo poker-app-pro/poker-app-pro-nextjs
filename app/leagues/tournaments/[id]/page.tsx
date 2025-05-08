@@ -39,7 +39,7 @@ export default async function TournamentDetailsPage(
                 </Button>
               </Link>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              <Link href="/leagues/1/tournaments">
+              <Link href="/leagues/1/results">
                 <Button variant="ghost" size="sm">
                   Tournaments
                 </Button>
