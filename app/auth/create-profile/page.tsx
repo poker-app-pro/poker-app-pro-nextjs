@@ -163,7 +163,7 @@ export default function CreateProfilePage() {
 
               <button
                 type="submit"
-                className="material-button-primary w-full flex items-center justify-center gap-2"
+                className="material-button-primary w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2"
                 disabled={state === "submitting"}
               >
                 {state === "submitting" ? (

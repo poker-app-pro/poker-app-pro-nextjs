@@ -137,6 +137,8 @@ const schema = a.schema({
       points: a.integer(), // Points earned in this tournament
       payout: a.integer(), // Money won
       rebuyCount: a.integer().default(0),
+      bountyPoints: a.integer().default(0),
+      consolationPoints: a.integer().default(0),
       notes: a.string(),
     })
     .authorization((allow) => [
