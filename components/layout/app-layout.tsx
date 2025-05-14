@@ -1,59 +1,76 @@
-"use client";
+"use client"
 
-import type React from "react";
+import type React from "react"
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import {
-  Menu,
-  ChevronLeft,
-  Trophy,
-  Calendar,
-  Users,
-  BarChart2,
-  LogOut,
-  Settings,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { HierarchyHeader } from "./hierarchy-header";
-import { signOut } from "aws-amplify/auth";
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
+import { Menu, ChevronLeft, Trophy, Calendar, Users, BarChart2, LogOut, Settings } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { HierarchyHeader } from "./hierarchy-header"
+import { signOut } from "aws-amplify/auth"
 
 interface AppLayoutProps {
-  children: React.ReactNode;
-  title: string;
-  userRole?: "admin" | "organizer";
-  breadcrumbs?: React.ReactNode;
+  children: React.ReactNode
+  userRole?: "admin" | "organizer"
+  breadcrumbs?: React.ReactNode
+  title?: string // Make title optional
 }
 
 export function AppLayout({
   children,
-  title,
   userRole = "admin",
   breadcrumbs,
+  title: propTitle, // Rename to propTitle to avoid conflicts
 }: AppLayoutProps) {
-  const pathname = usePathname();
-  const router = useRouter();
+  const pathname = usePathname()
+  const router = useRouter()
 
   // Default to closed on mobile, open on desktop
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+
+  // Generate title based on the current route
+  const getRouteTitle = () => {
+    // Remove leading slash and get the first segment of the path
+    const path = pathname.split("/")[1]
+
+    // Handle empty path (root route)
+    if (!path) return "Dashboard"
+
+    // Handle create and detail pages
+    if (pathname.includes("/create")) {
+      return `Create ${path.charAt(0).toUpperCase() + path.slice(1, -1)}`
+    }
+
+    // Check if it's a detail page (has an ID segment)
+    const segments = pathname.split("/")
+    if (segments.length > 2 && segments[2] !== "create") {
+      return `${path.charAt(0).toUpperCase() + path.slice(1, -1)} Details`
+    }
+
+    // Default case: capitalize the path
+    return `${path.charAt(0).toUpperCase() + path.slice(1)} Dashboard`
+  }
+
+  // Use prop title if provided, otherwise generate from route
+  const title = propTitle || getRouteTitle()
 
   // Check screen size on mount and window resize
   useEffect(() => {
     const checkScreenSize = () => {
-      setDrawerOpen(window.innerWidth >= 768); // 768px is typical md breakpoint
-    };
+      setDrawerOpen(window.innerWidth >= 768) // 768px is typical md breakpoint
+    }
 
     // Set initial state
-    checkScreenSize();
+    checkScreenSize()
 
     // Add event listener for resize
-    window.addEventListener("resize", checkScreenSize);
+    window.addEventListener("resize", checkScreenSize)
 
     // Cleanup
-    return () => window.removeEventListener("resize", checkScreenSize);
-  }, []);
+    return () => window.removeEventListener("resize", checkScreenSize)
+  }, [])
 
   // Find the navItems array and update it to match the new sidebar structure
   const navItems = [
@@ -75,7 +92,7 @@ export function AppLayout({
       icon: Calendar,
       roles: ["admin", "organizer"],
     },
-  ];
+  ]
 
   const settingsItems = [
     {
@@ -101,24 +118,22 @@ export function AppLayout({
       href: "/players",
       icon: Users,
       roles: ["admin", "organizer"],
-    }, 
-  ];
+    },
+  ]
 
-  const filteredNavItems = navItems.filter((item) =>
-    item.roles.includes(userRole)
-  );
+  const filteredNavItems = navItems.filter((item) => item.roles.includes(userRole))
 
   const handleLogout = async () => {
-    await signOut();
-    router.push("/auth/login");
-  };
+    await signOut()
+    router.push("/auth/login")
+  }
 
   const handleNavigation = () => {
     // Close drawer on mobile when navigation occurs
     if (window.innerWidth < 768) {
-      setDrawerOpen(false);
+      setDrawerOpen(false)
     }
-  };
+  }
 
   return (
     <div className="flex h-screen">
@@ -126,7 +141,7 @@ export function AppLayout({
       <div
         className={cn(
           "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out transform",
-          drawerOpen ? "translate-x-0" : "-translate-x-full"
+          drawerOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <div className="h-16 material-app-bar flex items-center justify-between px-4">
@@ -144,10 +159,7 @@ export function AppLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className={cn(
-                  "material-drawer-item",
-                  pathname === item.href && "active"
-                )}
+                className={cn("material-drawer-item", pathname === item.href && "active")}
                 onClick={handleNavigation}
               >
                 <item.icon className="h-5 w-5" />
@@ -160,7 +172,7 @@ export function AppLayout({
               <button
                 className={cn(
                   "material-drawer-item w-full text-left flex justify-between",
-                  settingsOpen && "bg-secondary"
+                  settingsOpen && "bg-secondary",
                 )}
                 onClick={() => setSettingsOpen(!settingsOpen)}
               >
@@ -169,10 +181,7 @@ export function AppLayout({
                   <span className="ml-3">Settings</span>
                 </div>
                 <ChevronLeft
-                  className={cn(
-                    "h-5 w-5 transition-transform",
-                    settingsOpen ? "rotate-90" : "-rotate-90"
-                  )}
+                  className={cn("h-5 w-5 transition-transform", settingsOpen ? "rotate-90" : "-rotate-90")}
                 />
               </button>
 
@@ -184,10 +193,7 @@ export function AppLayout({
                       <Link
                         key={item.href}
                         href={item.href}
-                        className={cn(
-                          "material-drawer-item",
-                          pathname === item.href && "active"
-                        )}
+                        className={cn("material-drawer-item", pathname === item.href && "active")}
                         onClick={handleNavigation}
                       >
                         <item.icon className="h-5 w-5" />
@@ -198,10 +204,7 @@ export function AppLayout({
               )}
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="material-drawer-item w-full text-left"
-          >
+          <button onClick={handleLogout} className="material-drawer-item w-full text-left">
             <LogOut className="h-5 w-5" />
             <span>Logout</span>
           </button>
@@ -210,10 +213,7 @@ export function AppLayout({
 
       {/* Main content */}
       <div
-        className={cn(
-          "flex-1 flex flex-col transition-all duration-300 ease-in-out",
-          drawerOpen ? "ml-64" : "ml-0"
-        )}
+        className={cn("flex-1 flex flex-col transition-all duration-300 ease-in-out", drawerOpen ? "ml-64" : "ml-0")}
       >
         <header className="material-app-bar sticky top-0 z-40">
           {!drawerOpen && (
@@ -235,5 +235,5 @@ export function AppLayout({
         </main>
       </div>
     </div>
-  );
+  )
 }
