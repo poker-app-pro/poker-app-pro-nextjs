@@ -1,11 +1,10 @@
-import { AppLayout } from "@/components/layout/app-layout";
-import { FloatingActionButton } from "@/components/ui/floating-action-button";
+ 
 import { Trophy, Calendar, Users, Plus, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 export default function DashboardPage() {
   return (
-    <AppLayout title="Leagues Dashboard">
+    <>
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-medium">Leagues Dashboard</h1>
@@ -157,9 +156,7 @@ export default function DashboardPage() {
             </Link>
           </div>
         </div>
-      </div>
-
-      <FloatingActionButton />
-    </AppLayout>
+      </div> 
+    </>
   );
 }

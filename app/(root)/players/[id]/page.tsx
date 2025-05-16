@@ -1,8 +1,7 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { AppLayout } from "@/components/layout/app-layout";
+import { useEffect, useState } from "react"
+import { useParams } from "next/navigation"
 import {
   Trophy,
   Calendar,
@@ -12,52 +11,54 @@ import {
   Loader2,
   AlertCircle,
   ArrowLeft,
-} from "lucide-react";
-import Link from "next/link";
-import { getPlayerProfile, type PlayerProfile } from "@/app/__actions/players";
+  Target,
+  Award,
+} from "lucide-react"
+import Link from "next/link"
+import { getPlayerProfile, type PlayerProfile } from "@/app/__actions/players"
 
 export default function PlayerProfilePage() {
   // Use the useParams hook to get the ID from the route
-  const params = useParams();
-  const playerId = params.id as string;
+  const params = useParams()
+  const playerId = params.id as string
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [playerData, setPlayerData] = useState<PlayerProfile | null>(null);
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [playerData, setPlayerData] = useState<PlayerProfile | null>(null)
 
   useEffect(() => {
     async function fetchPlayerProfile() {
       try {
-        setLoading(true);
-        const result = await getPlayerProfile(playerId);
+        setLoading(true)
+        const result = await getPlayerProfile(playerId)
 
         if (result.success && result.data) {
-          setPlayerData(result.data);
+          setPlayerData(result.data)
         } else {
-          setError(result.error || "Failed to fetch player profile");
+          setError(result.error || "Failed to fetch player profile")
         }
       } catch (err) {
-        console.error("Error fetching player profile:", err);
-        setError("An unexpected error occurred");
+        console.error("Error fetching player profile:", err)
+        setError("An unexpected error occurred")
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     }
 
     if (playerId) {
-      fetchPlayerProfile();
+      fetchPlayerProfile()
     }
-  }, [playerId]);
+  }, [playerId])
 
   function getOrdinal(n: number | null) {
-    if (n === null) return "N/A";
-    const s = ["th", "st", "nd", "rd"];
-    const v = n % 100;
-    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    if (n === null) return "N/A"
+    const s = ["th", "st", "nd", "rd"]
+    const v = n % 100
+    return n + (s[(v - 20) % 10] || s[v] || s[0])
   }
 
   return (
-    <AppLayout>
+    <>
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -87,12 +88,8 @@ export default function PlayerProfilePage() {
                   <Trophy className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-sm">
-                    Total Tournaments
-                  </p>
-                  <p className="text-2xl font-medium">
-                    {playerData?.stats.totalTournaments}
-                  </p>
+                  <p className="text-muted-foreground text-sm">Total Tournaments</p>
+                  <p className="text-2xl font-medium">{playerData?.stats.totalTournaments}</p>
                 </div>
               </div>
             </div>
@@ -103,12 +100,8 @@ export default function PlayerProfilePage() {
                   <Medal className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-sm">
-                    Tournament Wins
-                  </p>
-                  <p className="text-2xl font-medium">
-                    {playerData?.stats.totalWins}
-                  </p>
+                  <p className="text-muted-foreground text-sm">Tournament Wins</p>
+                  <p className="text-2xl font-medium">{playerData?.stats.totalWins}</p>
                 </div>
               </div>
             </div>
@@ -120,9 +113,7 @@ export default function PlayerProfilePage() {
                 </div>
                 <div>
                   <p className="text-muted-foreground text-sm">Total Points</p>
-                  <p className="text-2xl font-medium">
-                    {playerData?.stats.totalPoints}
-                  </p>
+                  <p className="text-2xl font-medium">{playerData?.stats.totalPoints}</p>
                 </div>
               </div>
             </div>
@@ -134,21 +125,56 @@ export default function PlayerProfilePage() {
                 </div>
                 <div>
                   <p className="text-muted-foreground text-sm">Best Finish</p>
-                  <p className="text-2xl font-medium">
-                    {getOrdinal(playerData?.stats.bestFinish || null)}
-                  </p>
+                  <p className="text-2xl font-medium">{getOrdinal(playerData?.stats.bestFinish || null)}</p>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* Bounty and Consolation Stats */}
+          {playerData?.stats.bountyCount || playerData?.stats.consolationCount ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              {playerData?.stats.bountyCount > 0 && (
+                <div className="material-card">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-full bg-amber-50 flex items-center justify-center">
+                      <Target className="h-6 w-6 text-amber-700" />
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-sm">Bounties Collected</p>
+                      <div className="flex items-baseline gap-2">
+                        <p className="text-2xl font-medium">{playerData?.stats.bountyCount}</p>
+                        <p className="text-sm text-muted-foreground">({playerData?.stats.bountyPoints} points)</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {playerData?.stats.consolationCount > 0 && (
+                <div className="material-card">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-full bg-purple-50 flex items-center justify-center">
+                      <Award className="h-6 w-6 text-purple-700" />
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-sm">Consolation Games</p>
+                      <div className="flex items-baseline gap-2">
+                        <p className="text-2xl font-medium">{playerData?.stats.consolationCount}</p>
+                        <p className="text-sm text-muted-foreground">({playerData?.stats.consolationPoints} points)</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : null}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <div className="material-card">
               <div className="material-card-header">
                 <h2 className="material-card-title">Tournament History</h2>
-                <p className="material-card-subtitle">
-                  All tournaments this player has participated in
-                </p>
+                <p className="material-card-subtitle">All tournaments this player has participated in</p>
               </div>
               <div className="material-card-content">
                 <table className="material-data-table">
@@ -161,15 +187,13 @@ export default function PlayerProfilePage() {
                       <th>Bounty</th>
                       <th>Consolation</th>
                       <th>Total</th>
+                      <th>Special</th>
                     </tr>
                   </thead>
                   <tbody>
                     {playerData?.tournamentResults.length === 0 ? (
                       <tr>
-                        <td
-                          colSpan={7}
-                          className="text-center py-4 text-muted-foreground"
-                        >
+                        <td colSpan={8} className="text-center py-4 text-muted-foreground">
                           No tournament history available
                         </td>
                       </tr>
@@ -177,10 +201,7 @@ export default function PlayerProfilePage() {
                       playerData?.tournamentResults.map((result) => (
                         <tr key={result.id}>
                           <td className="font-medium">
-                            <Link
-                              href={`/tournaments/${result.tournamentId}`}
-                              className="hover:text-primary"
-                            >
+                            <Link href={`/results/${result.tournamentId}`} className="hover:text-primary">
                               {result.tournamentName}
                             </Link>
                             <div className="text-xs text-muted-foreground">
@@ -203,11 +224,17 @@ export default function PlayerProfilePage() {
                           </td>
                           <td className="text-right">{result.points}</td>
                           <td className="text-right">{result.bountyPoints}</td>
-                          <td className="text-right">
-                            {result.consolationPoints}
-                          </td>
-                          <td className="text-right font-medium">
-                            {result.totalPoints}
+                          <td className="text-right">{result.consolationPoints}</td>
+                          <td className="text-right font-medium">{result.totalPoints}</td>
+                          <td>
+                            {result.bountyCount > 0 && (
+                              <span className="material-chip bg-amber-50 text-amber-700 mr-1">
+                                {result.bountyCount > 1 ? `Bounty x${result.bountyCount}` : "Bounty"}
+                              </span>
+                            )}
+                            {result.isConsolation && (
+                              <span className="material-chip bg-purple-50 text-purple-700">Consolation</span>
+                            )}
                           </td>
                         </tr>
                       ))
@@ -220,9 +247,7 @@ export default function PlayerProfilePage() {
             <div className="material-card">
               <div className="material-card-header">
                 <h2 className="material-card-title">Series Performance</h2>
-                <p className="material-card-subtitle">
-                  Player performance across all series
-                </p>
+                <p className="material-card-subtitle">Player performance across all series</p>
               </div>
               <div className="material-card-content">
                 <table className="material-data-table">
@@ -232,15 +257,13 @@ export default function PlayerProfilePage() {
                       <th>Tournaments</th>
                       <th>Best</th>
                       <th>Points</th>
+                      <th>Special</th>
                     </tr>
                   </thead>
                   <tbody>
                     {playerData?.seriesScoreboards.length === 0 ? (
                       <tr>
-                        <td
-                          colSpan={4}
-                          className="text-center py-4 text-muted-foreground"
-                        >
+                        <td colSpan={5} className="text-center py-4 text-muted-foreground">
                           No series data available
                         </td>
                       </tr>
@@ -248,27 +271,33 @@ export default function PlayerProfilePage() {
                       playerData?.seriesScoreboards.map((scoreboard) => (
                         <tr key={scoreboard.id}>
                           <td className="font-medium">
-                            <Link
-                              href={`/standings/${scoreboard.seriesId}`}
-                              className="hover:text-primary"
-                            >
+                            <Link href={`/standings/${scoreboard.seriesId}`} className="hover:text-primary">
                               {scoreboard.seriesName}
                             </Link>
-                            <div className="text-xs text-muted-foreground">
-                              {scoreboard.seasonName}
-                            </div>
+                            <div className="text-xs text-muted-foreground">{scoreboard.seasonName}</div>
                           </td>
                           <td>{scoreboard.tournamentCount}</td>
                           <td>{getOrdinal(scoreboard.bestFinish)}</td>
                           <td>
-                            <div className="font-medium">
-                              {scoreboard.totalPoints}
-                            </div>
+                            <div className="font-medium">{scoreboard.totalPoints}</div>
                             <div className="text-xs text-muted-foreground">
-                              Regular: {scoreboard.regularPoints} | Bounty:{" "}
-                              {scoreboard.bountyPoints} | Consolation:{" "}
+                              Regular: {scoreboard.regularPoints} | Bounty: {scoreboard.bountyPoints} | Consolation:{" "}
                               {scoreboard.consolationPoints}
                             </div>
+                          </td>
+                          <td>
+                            {scoreboard.bountyCount > 0 && (
+                              <span className="material-chip bg-amber-50 text-amber-700 mr-1">
+                                {scoreboard.bountyCount > 1 ? `${scoreboard.bountyCount} Bounties` : "1 Bounty"}
+                              </span>
+                            )}
+                            {scoreboard.consolationCount > 0 && (
+                              <span className="material-chip bg-purple-50 text-purple-700">
+                                {scoreboard.consolationCount > 1
+                                  ? `${scoreboard.consolationCount} Consolations`
+                                  : "1 Consolation"}
+                              </span>
+                            )}
                           </td>
                         </tr>
                       ))
@@ -283,20 +312,14 @@ export default function PlayerProfilePage() {
             <div className="material-card">
               <div className="material-card-header">
                 <h2 className="material-card-title">Point Breakdown</h2>
-                <p className="material-card-subtitle">
-                  Detailed breakdown of player's points
-                </p>
+                <p className="material-card-subtitle">Detailed breakdown of player's points</p>
               </div>
               <div className="material-card-content">
                 <div className="space-y-6">
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">
-                        Regular Points
-                      </span>
-                      <span className="text-sm">
-                        {playerData?.stats.regularPoints}
-                      </span>
+                      <span className="text-sm font-medium">Regular Points</span>
+                      <span className="text-sm">{playerData?.stats.regularPoints}</span>
                     </div>
                     <div className="h-2 bg-secondary rounded-full overflow-hidden">
                       <div
@@ -304,38 +327,7 @@ export default function PlayerProfilePage() {
                         style={{
                           width: `${
                             playerData?.stats.totalPoints
-                              ? Math.min(
-                                  100,
-                                  (playerData.stats.regularPoints /
-                                    playerData.stats.totalPoints) *
-                                    100
-                                )
-                              : 0
-                          }%`,
-                        }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">Bounty Points</span>
-                      <span className="text-sm">
-                        {playerData?.stats.bountyPoints}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary"
-                        style={{
-                          width: `${
-                            playerData?.stats.totalPoints
-                              ? Math.min(
-                                  100,
-                                  (playerData.stats.bountyPoints /
-                                    playerData.stats.totalPoints) *
-                                    100
-                                )
+                              ? Math.min(100, (playerData.stats.regularPoints / playerData.stats.totalPoints) * 100)
                               : 0
                           }%`,
                         }}
@@ -346,24 +338,40 @@ export default function PlayerProfilePage() {
                   <div>
                     <div className="flex justify-between mb-1">
                       <span className="text-sm font-medium">
-                        Consolation Points
+                        Bounty Points{" "}
+                        {Number(playerData?.stats?.bountyCount) > 0 && `(${playerData?.stats.bountyCount} bounties)`}
                       </span>
-                      <span className="text-sm">
-                        {playerData?.stats.consolationPoints}
-                      </span>
+                      <span className="text-sm">{playerData?.stats.bountyPoints}</span>
                     </div>
                     <div className="h-2 bg-secondary rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-primary"
+                        className="h-full bg-amber-500"
                         style={{
                           width: `${
                             playerData?.stats.totalPoints
-                              ? Math.min(
-                                  100,
-                                  (playerData.stats.consolationPoints /
-                                    playerData.stats.totalPoints) *
-                                    100
-                                )
+                              ? Math.min(100, (playerData.stats.bountyPoints / playerData.stats.totalPoints) * 100)
+                              : 0
+                          }%`,
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">
+                        Consolation Points{" "}
+                        {Number(playerData?.stats?.consolationCount) > 0 && `(${playerData?.stats.consolationCount} games)`}
+                      </span>
+                      <span className="text-sm">{playerData?.stats.consolationPoints}</span>
+                    </div>
+                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-purple-500"
+                        style={{
+                          width: `${
+                            playerData?.stats.totalPoints
+                              ? Math.min(100, (playerData.stats.consolationPoints / playerData.stats.totalPoints) * 100)
                               : 0
                           }%`,
                         }}
@@ -376,12 +384,8 @@ export default function PlayerProfilePage() {
 
             <div className="material-card">
               <div className="material-card-header">
-                <h2 className="material-card-title">
-                  Season Event Qualifications
-                </h2>
-                <p className="material-card-subtitle">
-                  Season finale qualification status
-                </p>
+                <h2 className="material-card-title">Season Event Qualifications</h2>
+                <p className="material-card-subtitle">Season finale qualification status</p>
               </div>
               <div className="material-card-content">
                 <table className="material-data-table">
@@ -396,10 +400,7 @@ export default function PlayerProfilePage() {
                   <tbody>
                     {playerData?.qualifications.length === 0 ? (
                       <tr>
-                        <td
-                          colSpan={4}
-                          className="text-center py-4 text-muted-foreground"
-                        >
+                        <td colSpan={4} className="text-center py-4 text-muted-foreground">
                           No qualification data available
                         </td>
                       </tr>
@@ -407,10 +408,7 @@ export default function PlayerProfilePage() {
                       playerData?.qualifications.map((qualification) => (
                         <tr key={qualification.id}>
                           <td className="font-medium">
-                            <Link
-                              href={`/qualification`}
-                              className="hover:text-primary"
-                            >
+                            <Link href={`/qualification`} className="hover:text-primary">
                               {qualification.seasonEventName}
                             </Link>
                           </td>
@@ -423,15 +421,11 @@ export default function PlayerProfilePage() {
                                   : "bg-muted text-muted-foreground"
                               }`}
                             >
-                              {qualification.qualified
-                                ? "Qualified"
-                                : "Not Qualified"}
+                              {qualification.qualified ? "Qualified" : "Not Qualified"}
                             </span>
                           </td>
                           <td>
-                            {qualification.finalPosition
-                              ? getOrdinal(qualification.finalPosition)
-                              : "Not Played"}
+                            {qualification.finalPosition ? getOrdinal(qualification.finalPosition) : "Not Played"}
                           </td>
                         </tr>
                       ))
@@ -443,6 +437,6 @@ export default function PlayerProfilePage() {
           </div>
         </>
       )}
-    </AppLayout>
-  );
+    </>
+  )
 }

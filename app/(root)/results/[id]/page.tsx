@@ -1,12 +1,11 @@
-import { AppLayout } from "@/components/layout/app-layout"
 import { Trophy, Calendar, MapPin, Users, DollarSign, ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { formatDate } from "@/lib/utils" 
+import { formatDate } from "@/lib/utils"
 import { notFound } from "next/navigation"
 import { getTournamentResultDetails } from "@/app/__actions/results"
 
 export default async function TournamentResultDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+  const { id } = await params
   let tournament
 
   try {
@@ -21,7 +20,7 @@ export default async function TournamentResultDetailsPage({ params }: { params: 
   }
 
   return (
-    <AppLayout title={`${tournament.name} Results`}>
+    <>
       <Link href="/results" className="flex items-center text-muted-foreground hover:text-foreground mb-4">
         <ArrowLeft className="h-4 w-4 mr-1" />
         Back to Results
@@ -95,7 +94,11 @@ export default async function TournamentResultDetailsPage({ params }: { params: 
                   </td>
                   <td className="text-right font-medium">{result.points}</td>
                   <td>
-                    {result.isBounty && <span className="material-chip bg-amber-50 text-amber-700 mr-1">Bounty</span>}
+                    {result.bountyCount > 0 && (
+                      <span className="material-chip bg-amber-50 text-amber-700 mr-1">
+                        {result.bountyCount > 1 ? `Bounty x${result.bountyCount}` : "Bounty"}
+                      </span>
+                    )}
                     {result.isConsolation && (
                       <span className="material-chip bg-purple-50 text-purple-700">Consolation</span>
                     )}
@@ -167,7 +170,7 @@ export default async function TournamentResultDetailsPage({ params }: { params: 
           </div>
         </div>
       </div>
-    </AppLayout>
+    </>
   )
 }
 

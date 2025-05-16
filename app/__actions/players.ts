@@ -22,6 +22,8 @@ export interface PlayerProfile {
     regularPoints: number;
     bountyPoints: number;
     consolationPoints: number;
+    bountyCount: number;
+    consolationCount: number;
   };
   tournamentResults: {
     id: string;
@@ -37,6 +39,8 @@ export interface PlayerProfile {
     bountyPoints: number;
     consolationPoints: number;
     totalPoints: number;
+    bountyCount: number;
+    isConsolation: boolean;
   }[];
   seriesScoreboards: {
     id: string;
@@ -50,6 +54,8 @@ export interface PlayerProfile {
     regularPoints: number;
     bountyPoints: number;
     consolationPoints: number;
+    bountyCount: number;
+    consolationCount: number;
   }[];
   qualifications: {
     id: string;
@@ -59,7 +65,6 @@ export interface PlayerProfile {
     finalPosition: number | null;
   }[];
 }
-
 export async function getPlayerProfile(
   playerId: string
 ): Promise<{ success: boolean; data?: PlayerProfile; error?: string }> {
@@ -147,8 +152,10 @@ export async function getPlayerProfile(
     let regularPoints = 0;
     let bountyPoints = 0;
     let consolationPoints = 0;
+    let totalBountyCount = 0;
+    let totalConsolationCount = 0;
 
-    // Process tournament results
+    // Process tournament results with bounty and consolation counts
     const tournamentResults = await Promise.all(
       playerTournaments.map(async (tp) => {
         const tournament = tournaments.find((t) => t.id === tp.tournamentId);
@@ -170,6 +177,39 @@ export async function getPlayerProfile(
         bountyPoints += tpBountyPoints;
         consolationPoints += tpConsolationPoints;
 
+        // Extract bounty and consolation information from tournament notes
+        let bountyCount = 0;
+        let isConsolation = false;
+
+        if (tournament.notes) {
+          // Check for bounties
+          if (tournament.notes.includes("Bounty players:")) {
+            const bountySection = tournament.notes
+              .split("Bounty players:")[1]
+              .split("\n")[0]
+              .trim();
+            const bountyNames = bountySection.split(", ");
+
+            // Count occurrences of this player's name
+            bountyCount = bountyNames.filter(
+              (name) => name === player.name
+            ).length;
+            totalBountyCount += bountyCount;
+          }
+
+          // Check for consolation
+          if (tournament.notes.includes("Consolation players:")) {
+            const consolationSection = tournament.notes
+              .split("Consolation players:")[1]
+              .split("\n")[0]
+              .trim();
+            const consolationNames = consolationSection.split(", ");
+
+            isConsolation = consolationNames.includes(player.name);
+            if (isConsolation) totalConsolationCount++;
+          }
+        }
+
         return {
           id: tp.id,
           tournamentId: tp.tournamentId,
@@ -184,6 +224,8 @@ export async function getPlayerProfile(
           bountyPoints: tpBountyPoints,
           consolationPoints: tpConsolationPoints,
           totalPoints: tp.points || 0,
+          bountyCount,
+          isConsolation,
         };
       })
     );
@@ -193,7 +235,7 @@ export async function getPlayerProfile(
       (result) => result !== null
     ) as NonNullable<(typeof tournamentResults)[0]>[];
 
-    // Process series scoreboards
+    // Process series scoreboards with bounty and consolation counts
     const seriesScoreboards = await Promise.all(
       playerScoreboards.map(async (sb) => {
         const series = allSeries.find((s) => s.id === sb.seriesId);
@@ -222,6 +264,38 @@ export async function getPlayerProfile(
           0
         );
 
+        // Calculate bounty and consolation counts for this series
+        let seriesBountyCount = 0;
+        let seriesConsolationCount = 0;
+
+        for (const tp of seriesTournaments) {
+          const tournament = tournaments.find((t) => t.id === tp.tournamentId);
+          if (!tournament || !tournament.notes) continue;
+
+          // Check for bounties
+          if (tournament.notes.includes("Bounty players:")) {
+            const bountySection = tournament.notes
+              .split("Bounty players:")[1]
+              .split("\n")[0]
+              .trim();
+            const bountyNames = bountySection.split(", ");
+            seriesBountyCount += bountyNames.filter(
+              (name) => name === player.name
+            ).length;
+          }
+
+          // Check for consolation
+          if (tournament.notes.includes("Consolation players:")) {
+            const consolationSection = tournament.notes
+              .split("Consolation players:")[1]
+              .split("\n")[0]
+              .trim();
+            const consolationNames = consolationSection.split(", ");
+            if (consolationNames.includes(player.name))
+              seriesConsolationCount++;
+          }
+        }
+
         return {
           id: sb.id,
           seriesId: sb.seriesId,
@@ -234,6 +308,8 @@ export async function getPlayerProfile(
           regularPoints: sbRegularPoints,
           bountyPoints: sbBountyPoints,
           consolationPoints: sbConsolationPoints,
+          bountyCount: seriesBountyCount,
+          consolationCount: seriesConsolationCount,
         };
       })
     );
@@ -285,6 +361,8 @@ export async function getPlayerProfile(
           regularPoints,
           bountyPoints,
           consolationPoints,
+          bountyCount: totalBountyCount,
+          consolationCount: totalConsolationCount,
         },
         tournamentResults: validTournamentResults,
         seriesScoreboards: sortedSeriesScoreboards,
@@ -365,6 +443,8 @@ export async function getPlayers(searchTerm = "", page = 1, pageSize = 10) {
         isActive: player.isActive || false,
       } as PlayerListItem;
     });
+
+    players = players.sort((a, b) => b.tournamentCount - a.tournamentCount);
 
     // Apply search filter if provided
     if (searchTerm) {

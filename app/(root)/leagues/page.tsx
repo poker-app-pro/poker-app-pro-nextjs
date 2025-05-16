@@ -1,7 +1,6 @@
 "use client"
 import { useState } from "react"
-import { AppLayout } from "@/components/layout/app-layout"
-import { Button } from "@/components/ui/button"
+ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import LeaguesList from "./_components/leagues-list"
@@ -12,7 +11,7 @@ export default function LeaguesPage() {
   const [searchQuery, setSearchQuery] = useState("")
 
   return (
-    <AppLayout title="Leagues Dashboard">
+    <>
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between gap-4">
           <div>
@@ -46,6 +45,6 @@ export default function LeaguesPage() {
         <LeaguesList searchQuery={searchQuery} />
       </div>
       <FloatingActionButton />
-    </AppLayout>
+    </>
   )
 }

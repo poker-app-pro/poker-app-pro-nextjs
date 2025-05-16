@@ -1,16 +1,17 @@
 "use client"
 
 import type React from "react"
+
 import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
- import { Breadcrumb } from "@/components/ui/breadcrumb"
-import { Calendar, Loader2, AlertCircle } from "lucide-react"
-import { useHierarchy } from "@/contexts/hierarchy-context"
+import { useRouter } from "next/navigation"
+import { Breadcrumb } from "@/components/ui/breadcrumb"
+import { Calendar, Loader2, AlertCircle, HelpCircle } from "lucide-react"
 import { client } from "@/components/AmplifyClient"
-import { getCurrentUser } from "aws-amplify/auth" 
+import { getCurrentUser } from "aws-amplify/auth"
 import { createSeason } from "@/app/__actions/seasons"
 
-type FormState = "idle" | "loading" | "submitting" | "success" | "error"
+type FormState = "idle" | "submitting" | "success" | "error"
+type PointsSystem = "weighted" | "custom"
 
 interface League {
   id: string
@@ -19,12 +20,9 @@ interface League {
 
 export default function CreateSeasonPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const { activeLeague } = useHierarchy()
 
-  const [state, setState] = useState<FormState>("loading")
+  const [state, setState] = useState<FormState>("idle")
   const [error, setError] = useState("")
-  const [leagues, setLeagues] = useState<League[]>([])
 
   // Form fields
   const [name, setName] = useState("")
@@ -33,45 +31,43 @@ export default function CreateSeasonPage() {
   const [endDate, setEndDate] = useState("")
   const [description, setDescription] = useState("")
   const [isActive, setIsActive] = useState(true)
+  const [pointsSystem, setPointsSystem] = useState<PointsSystem>("weighted")
+  const [customPointsConfig, setCustomPointsConfig] = useState("")
+
+  // Data fetching
+  const [leagues, setLeagues] = useState<League[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   // Validation errors
   const [nameError, setNameError] = useState("")
   const [leagueError, setLeagueError] = useState("")
   const [startDateError, setStartDateError] = useState("")
+  const [endDateError, setEndDateError] = useState("")
+  const [customPointsError, setCustomPointsError] = useState("")
 
   // Fetch leagues
   useEffect(() => {
     async function fetchLeagues() {
       try {
-        const result = await client.models.League.list({
+        const leaguesResult = await client.models.League.list({
           authMode: "userPool",
           filter: { isActive: { eq: true } },
-         })
-        setLeagues(result.data || [])
-        setState("idle")
+          selectionSet: ["id", "name"],
+        })
+
+        if (leaguesResult.data) {
+          setLeagues(leaguesResult.data)
+        }
       } catch (error) {
         console.error("Error fetching leagues:", error)
-        setError("Failed to load leagues. Please try again.")
-        setState("error")
+        setError("Failed to load leagues")
+      } finally {
+        setIsLoading(false)
       }
     }
 
     fetchLeagues()
   }, [])
-
-  // Set default start date to today and handle query params
-  useEffect(() => {
-    const today = new Date()
-    setStartDate(today.toISOString().split("T")[0])
-
-    // Set league ID from query params or active league
-    const leagueIdFromQuery = searchParams.get("leagueId")
-    if (leagueIdFromQuery) {
-      setLeagueId(leagueIdFromQuery)
-    } else if (activeLeague) {
-      setLeagueId(activeLeague.id)
-    }
-  }, [searchParams, activeLeague])
 
   const validateForm = (): boolean => {
     let isValid = true
@@ -80,6 +76,8 @@ export default function CreateSeasonPage() {
     setNameError("")
     setLeagueError("")
     setStartDateError("")
+    setEndDateError("")
+    setCustomPointsError("")
 
     // Validate name
     if (!name.trim()) {
@@ -99,10 +97,26 @@ export default function CreateSeasonPage() {
       isValid = false
     }
 
-    // Validate end date is after start date
+    // Validate end date is after start date (if provided)
     if (startDate && endDate && new Date(endDate) <= new Date(startDate)) {
-      setStartDateError("End date must be after start date")
+      setEndDateError("End date must be after start date")
       isValid = false
+    }
+
+    // Validate custom points config
+    if (pointsSystem === "custom") {
+      try {
+        if (!customPointsConfig.trim()) {
+          setCustomPointsError("Custom points configuration is required")
+          isValid = false
+        } else {
+          JSON.parse(customPointsConfig)
+        }
+      } catch (err) {
+        console.error(err)
+        setCustomPointsError("Invalid JSON format")
+        isValid = false
+      }
     }
 
     return isValid
@@ -127,8 +141,12 @@ export default function CreateSeasonPage() {
       formData.append("leagueId", leagueId)
       formData.append("startDate", startDate)
       if (endDate) formData.append("endDate", endDate)
-      formData.append("description", description)
-      formData.append("isActive", isActive ? "on" : "off")
+      if (description) formData.append("description", description)
+      if (isActive) formData.append("isActive", "on")
+      formData.append("pointsSystem", pointsSystem)
+      if (pointsSystem === "custom" && customPointsConfig) {
+        formData.append("customPointsConfig", customPointsConfig)
+      }
       formData.append("userId", user.userId)
 
       // Call server action
@@ -136,13 +154,13 @@ export default function CreateSeasonPage() {
 
       if (result.success) {
         setState("success")
+
         // Redirect to seasons page
         setTimeout(() => {
           router.push("/seasons")
         }, 1000)
       } else {
-        setState("error")
-        setError(result.error || "An error occurred while creating the season. Please try again.")
+        throw new Error(result.error || "Failed to create season")
       }
     } catch (err) {
       console.error(err)
@@ -164,19 +182,9 @@ export default function CreateSeasonPage() {
           </div>
         )}
 
-        {state === "loading" ? (
-          <div className="material-card p-6 text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-            <p className="text-muted-foreground">Loading leagues...</p>
-          </div>
-        ) : state === "success" ? (
-          <div className="material-card p-6 text-center">
-            <div className="h-16 w-16 rounded-full bg-primary/10 text-primary mx-auto mb-4 flex items-center justify-center">
-              <Calendar className="h-8 w-8" />
-            </div>
-            <h2 className="text-2xl font-medium mb-2">Season Created Successfully!</h2>
-            <p className="text-muted-foreground mb-6">The season has been created.</p>
-            <p className="text-sm text-muted-foreground">Redirecting to seasons page...</p>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
           <div className="material-card">
@@ -185,9 +193,7 @@ export default function CreateSeasonPage() {
                 <Calendar className="h-5 w-5 text-primary" />
                 Create New Season
               </h2>
-              <p className="material-card-subtitle">
-                Seasons group series and tournaments within a specific time period
-              </p>
+              <p className="material-card-subtitle">Seasons organize series and tournaments over a period of time</p>
             </div>
 
             <form onSubmit={handleSubmit} className="material-card-content space-y-6">
@@ -200,7 +206,7 @@ export default function CreateSeasonPage() {
                   value={leagueId}
                   onChange={(e) => setLeagueId(e.target.value)}
                   className={`material-input ${leagueError ? "border-destructive" : ""}`}
-                  disabled={state === "submitting" || !!activeLeague}
+                  disabled={state === "submitting"}
                 >
                   <option value="">Select a league</option>
                   {leagues.map((league) => (
@@ -222,7 +228,7 @@ export default function CreateSeasonPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className={`material-input ${nameError ? "border-destructive" : ""}`}
-                  placeholder="e.g., Summer Season 2024"
+                  placeholder="e.g., Summer 2024"
                   disabled={state === "submitting"}
                 />
                 {nameError && <p className="text-destructive text-xs mt-1">{nameError}</p>}
@@ -253,10 +259,14 @@ export default function CreateSeasonPage() {
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="material-input"
+                    className={`material-input ${endDateError ? "border-destructive" : ""}`}
                     disabled={state === "submitting"}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Leave blank for ongoing seasons</p>
+                  {endDateError ? (
+                    <p className="text-destructive text-xs mt-1">{endDateError}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">Leave blank for ongoing season</p>
+                  )}
                 </div>
               </div>
 
@@ -273,6 +283,54 @@ export default function CreateSeasonPage() {
                   disabled={state === "submitting"}
                 />
               </div>
+
+              <div>
+                <label htmlFor="pointsSystem" className="material-label flex items-center gap-2">
+                  Points System
+                  <div className="relative group">
+                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    <div className="absolute left-full ml-2 top-0 w-64 p-2 bg-white border border-gray-200 rounded shadow-md hidden group-hover:block z-10 text-xs">
+                      <p>
+                        <strong>Weighted:</strong> Points = total players * (11-rank), only top 10 players receive
+                        points
+                      </p>
+                      <p>
+                        <strong>Custom:</strong> Define your own points structure
+                      </p>
+                    </div>
+                  </div>
+                </label>
+                <select
+                  id="pointsSystem"
+                  value={pointsSystem}
+                  onChange={(e) => setPointsSystem(e.target.value as PointsSystem)}
+                  className="material-input"
+                  disabled={state === "submitting"}
+                >
+                  <option value="weighted">Weighted</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+
+              {pointsSystem === "custom" && (
+                <div>
+                  <label htmlFor="customPointsConfig" className="material-label">
+                    Custom Points Configuration (JSON)
+                  </label>
+                  <textarea
+                    id="customPointsConfig"
+                    value={customPointsConfig}
+                    onChange={(e) => setCustomPointsConfig(e.target.value)}
+                    className={`material-input min-h-[100px] font-mono text-sm ${customPointsError ? "border-destructive" : ""}`}
+                    placeholder='{"1": 100, "2": 90, "3": 80, "4": 70, "5": 60}'
+                    disabled={state === "submitting"}
+                  />
+                  {customPointsError && <p className="text-destructive text-xs mt-1">{customPointsError}</p>}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Enter a JSON object with position numbers as keys and point values as values
+                  </p>
+                </div>
+              )}
 
               <div className="flex items-center">
                 <input
