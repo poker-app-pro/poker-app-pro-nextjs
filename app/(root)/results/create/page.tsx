@@ -3,14 +3,12 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { AppLayout } from "@/components/layout/app-layout"
 import { Breadcrumb } from "@/components/ui/breadcrumb"
 import { Trophy, Loader2, AlertCircle, X, Users, Calendar } from "lucide-react"
 import { PlayerAutoSuggest } from "@/components/ui/player-auto-suggest"
 import { client } from "@/components/AmplifyClient"
 import { saveGameResults } from "@/app/__actions/results"
 import { DraggablePlayerList } from "@/components/dashboard/draggable-player-list"
- 
 
 type FormState = "idle" | "submitting" | "success" | "error"
 
@@ -36,7 +34,7 @@ export default function CreateTournamentPage() {
   const [state, setState] = useState<FormState>("idle")
   const [error, setError] = useState("")
   const [series, setSeries] = useState<Series[]>([])
-  const [ , setPlayers] = useState<Player[]>([])
+  const [, setPlayers] = useState<Player[]>([])
 
   // Form fields
   const [seriesId, setSeriesId] = useState("")
@@ -57,6 +55,13 @@ export default function CreateTournamentPage() {
   const [totalPlayersError, setTotalPlayersError] = useState("")
   const [gameTimeError, setGameTimeError] = useState("")
 
+  // Update total players when ranking players change
+  useEffect(() => {
+    if (rankingPlayers.length > totalPlayers) {
+      setTotalPlayers(rankingPlayers.length)
+    }
+  }, [rankingPlayers, totalPlayers])
+
   // Fetch series and players on component mount
   useEffect(() => {
     async function fetchData() {
@@ -71,8 +76,8 @@ export default function CreateTournamentPage() {
           // Get season and league details for each series
           const seriesWithDetails = await Promise.all(
             seriesResponse.data.map(async (series) => {
-              const seasonResponse = await client.models.Season.get({ id: series.seasonId }, { authMode: "userPool"})
-              const leagueResponse = await client.models.League.get({ id: series.leagueId }, { authMode: "userPool"})
+              const seasonResponse = await client.models.Season.get({ id: series.seasonId }, { authMode: "userPool" })
+              const leagueResponse = await client.models.League.get({ id: series.leagueId }, { authMode: "userPool" })
 
               return {
                 id: series.id,
@@ -145,21 +150,40 @@ export default function CreateTournamentPage() {
       return
     }
 
-    // Remove player from available players for this section
-    const updatedAvailable = [...availablePlayers]
-    const playerIndex = updatedAvailable.findIndex((p) => p.id === player.id)
-
-    if (playerIndex !== -1) {
-      updatedAvailable.splice(playerIndex, 1)
-      setAvailablePlayers(updatedAvailable)
-    }
-
-    // Add player to the appropriate section
+    // For rankings section, remove player from available players
     if (section === "rankings" && !isInRankings) {
-      setRankingPlayers([...rankingPlayers, player])
-    } else if (section === "bounties" && !isInBounties) {
+      // Remove player from available players
+      const updatedAvailable = [...availablePlayers]
+      const playerIndex = updatedAvailable.findIndex((p) => p.id === player.id)
+
+      if (playerIndex !== -1) {
+        updatedAvailable.splice(playerIndex, 1)
+        setAvailablePlayers(updatedAvailable)
+      }
+
+      const newRankingPlayers = [...rankingPlayers, player]
+      setRankingPlayers(newRankingPlayers)
+
+      // Auto-update total players if needed
+      if (newRankingPlayers.length > totalPlayers) {
+        setTotalPlayers(newRankingPlayers.length)
+      }
+    }
+    // For bounties section, only allow players from rankings
+    else if (section === "bounties" && !isInBounties) {
       setBountyPlayers([...bountyPlayers, player])
-    } else if (section === "consolation" && !isInConsolation) {
+    }
+    // For consolation section, remove player from available players
+    else if (section === "consolation" && !isInConsolation) {
+      // Remove player from available players
+      const updatedAvailable = [...availablePlayers]
+      const playerIndex = updatedAvailable.findIndex((p) => p.id === player.id)
+
+      if (playerIndex !== -1) {
+        updatedAvailable.splice(playerIndex, 1)
+        setAvailablePlayers(updatedAvailable)
+      }
+
       setConsolationPlayers([...consolationPlayers, player])
     }
   }
@@ -171,14 +195,21 @@ export default function CreateTournamentPage() {
     const isInBounties = section !== "bounties" && bountyPlayers.some((p) => p.id === player.id)
     const isInConsolation = section !== "consolation" && consolationPlayers.some((p) => p.id === player.id)
 
-    // Only add back to available if not in any other section
-    if (!isInRankings && !isInBounties && !isInConsolation) {
+    // Only add back to available if not in any other section and not removing from bounties
+    // (since bounties should only come from rankings)
+    if (!isInRankings && !isInBounties && !isInConsolation && section !== "bounties") {
       setAvailablePlayers([...availablePlayers, player])
     }
 
     // Remove player from the appropriate section
     if (section === "rankings") {
       setRankingPlayers(rankingPlayers.filter((p) => p.id !== player.id))
+
+      // Also remove from bounties if present, since bounties must be in rankings
+      const isInBounties = bountyPlayers.some((p) => p.id === player.id)
+      if (isInBounties) {
+        setBountyPlayers(bountyPlayers.filter((p) => p.id !== player.id))
+      }
     } else if (section === "bounties") {
       setBountyPlayers(bountyPlayers.filter((p) => p.id !== player.id))
     } else if (section === "consolation") {
@@ -193,6 +224,7 @@ export default function CreateTournamentPage() {
     setSeriesError("")
     setTotalPlayersError("")
     setGameTimeError("")
+    setError("")
 
     // Validate series
     if (!seriesId) {
@@ -203,6 +235,9 @@ export default function CreateTournamentPage() {
     // Validate total players
     if (totalPlayers <= 0) {
       setTotalPlayersError("Total players must be greater than 0")
+      isValid = false
+    } else if (totalPlayers < rankingPlayers.length) {
+      setTotalPlayersError(`Total players must be at least ${rankingPlayers.length} (number of ranked players)`)
       isValid = false
     }
 
@@ -273,7 +308,8 @@ export default function CreateTournamentPage() {
   const breadcrumbItems = [{ label: "Tournaments", href: "/results" }, { label: "Record Results" }]
 
   return (
-    <AppLayout title="Record Tournament Results" breadcrumbs={<Breadcrumb items={breadcrumbItems} />}>
+    <>
+      <Breadcrumb items={breadcrumbItems} />
       <div className="max-w-3xl mx-auto">
         {state === "error" && (
           <div className="bg-destructive/10 text-destructive p-4 rounded-md mb-6 flex items-center gap-2">
@@ -335,13 +371,19 @@ export default function CreateTournamentPage() {
                   <input
                     id="totalPlayers"
                     type="number"
-                    min="1"
+                    min={rankingPlayers.length > 0 ? rankingPlayers.length : 1}
                     value={totalPlayers || ""}
                     onChange={(e) => setTotalPlayers(Number.parseInt(e.target.value) || 0)}
                     className={`material-input ${totalPlayersError ? "border-destructive" : ""}`}
                     disabled={state === "submitting"}
                   />
-                  {totalPlayersError && <p className="text-destructive text-xs mt-1">{totalPlayersError}</p>}
+                  {totalPlayersError ? (
+                    <p className="text-destructive text-xs mt-1">{totalPlayersError}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Must be at least equal to the number of ranked players ({rankingPlayers.length})
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -391,11 +433,20 @@ export default function CreateTournamentPage() {
                 </label>
 
                 <div className="space-y-4">
-                  <PlayerAutoSuggest
-                    onSelect={(player) => handleAddPlayer(player, "bounties")}
-                    existingPlayers={availablePlayers}
-                    placeholder="Search players to add to bounties"
-                  />
+                  {rankingPlayers.length === 0 ? (
+                    <div className="text-center py-4 border border-dashed border-gray-200 rounded-md">
+                      <p className="text-muted-foreground">Add players to rankings first to select bounties</p>
+                    </div>
+                  ) : (
+                    <PlayerAutoSuggest
+                      onSelect={(player) => handleAddPlayer(player, "bounties")}
+                      existingPlayers={rankingPlayers.filter(
+                        (player) => !bountyPlayers.some((p) => p.id === player.id),
+                      )}
+                      placeholder="Select players from rankings to add as bounties"
+                      helperText="Only players from the rankings can be added as bounties"
+                    />
+                  )}
 
                   <div className="space-y-2">
                     {bountyPlayers.length === 0 ? (
@@ -491,6 +542,6 @@ export default function CreateTournamentPage() {
           </div>
         )}
       </div>
-    </AppLayout>
+    </>
   )
 }

@@ -144,7 +144,7 @@ const LeaguesList = ({ searchQuery = "" }: LeaguesListProps) => {
                 </CardContent>
                 <CardFooter className="pt-2">
                   <Link href={`/leagues/${league.id}`} className="w-full">
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full border-gray-300 text-black">
                       View League
                     </Button>
                   </Link>

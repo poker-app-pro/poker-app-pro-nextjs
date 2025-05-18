@@ -5,14 +5,13 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Breadcrumb } from "@/components/ui/breadcrumb"
-import { Star, Loader2, AlertCircle, HelpCircle } from "lucide-react"
+import { Star, Loader2, AlertCircle } from "lucide-react"
 import { useHierarchy } from "@/contexts/hierarchy-context"
 import { client } from "@/components/AmplifyClient"
 import { getCurrentUser } from "aws-amplify/auth"
 import { createSeries } from "@/app/__actions/series"
- 
+
 type FormState = "idle" | "submitting" | "success" | "error"
-type PointsSystem = "standard" | "weighted" | "custom"
 
 interface League {
   id: string
@@ -23,6 +22,8 @@ interface Season {
   id: string
   name: string
   leagueId: string
+  startDate?: string
+  endDate?: string | null
 }
 
 export default function CreateSeriesPage() {
@@ -41,13 +42,12 @@ export default function CreateSeriesPage() {
   const [endDate, setEndDate] = useState("")
   const [description, setDescription] = useState("")
   const [isActive, setIsActive] = useState(true)
-  const [pointsSystem, setPointsSystem] = useState<PointsSystem>("standard")
-  const [customPointsConfig, setCustomPointsConfig] = useState("")
 
   // Data fetching
   const [leagues, setLeagues] = useState<League[]>([])
   const [seasons, setSeasons] = useState<Season[]>([])
   const [filteredSeasons, setFilteredSeasons] = useState<Season[]>([])
+  const [selectedSeason, setSelectedSeason] = useState<Season | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   // Validation errors
@@ -55,7 +55,7 @@ export default function CreateSeriesPage() {
   const [leagueError, setLeagueError] = useState("")
   const [seasonError, setSeasonError] = useState("")
   const [startDateError, setStartDateError] = useState("")
-  const [customPointsError, setCustomPointsError] = useState("")
+  const [endDateError, setEndDateError] = useState("")
 
   // Fetch leagues and seasons
   useEffect(() => {
@@ -70,7 +70,7 @@ export default function CreateSeriesPage() {
         const seasonsResult = await client.models.Season.list({
           authMode: "userPool",
           filter: { isActive: { eq: true } },
-          selectionSet: ["id", "name", "leagueId"],
+          selectionSet: ["id", "name", "leagueId", "startDate", "endDate"],
         })
 
         if (leaguesResult.data) {
@@ -91,11 +91,8 @@ export default function CreateSeriesPage() {
     fetchData()
   }, [])
 
-  // Set default start date to today and handle query params
+  // Handle query params and set default values
   useEffect(() => {
-    const today = new Date()
-    setStartDate(today.toISOString().split("T")[0])
-
     // Set league ID from query params or active league
     const leagueIdFromQuery = searchParams.get("leagueId")
     if (leagueIdFromQuery) {
@@ -116,11 +113,37 @@ export default function CreateSeriesPage() {
   // Filter seasons when league changes
   useEffect(() => {
     if (leagueId) {
-      setFilteredSeasons(seasons.filter((season) => season.leagueId === leagueId))
+      const filtered = seasons.filter((season) => season.leagueId === leagueId)
+      setFilteredSeasons(filtered)
+
+      // Clear selected season if it's not in the filtered list
+      if (seasonId && !filtered.some((s) => s.id === seasonId)) {
+        setSeasonId("")
+        setSelectedSeason(null)
+      }
     } else {
       setFilteredSeasons(seasons)
     }
-  }, [leagueId, seasons])
+  }, [leagueId, seasons, seasonId])
+
+  // Update selected season and set default dates when season changes
+  useEffect(() => {
+    if (seasonId) {
+      const season = seasons.find((s) => s.id === seasonId) || null
+      setSelectedSeason(season)
+
+      if (season?.startDate) {
+        // Default start date to season start date
+        setStartDate(season.startDate)
+      }
+
+      // Clear any previous errors
+      setStartDateError("")
+      setEndDateError("")
+    } else {
+      setSelectedSeason(null)
+    }
+  }, [seasonId, seasons])
 
   const validateForm = (): boolean => {
     let isValid = true
@@ -130,7 +153,7 @@ export default function CreateSeriesPage() {
     setLeagueError("")
     setSeasonError("")
     setStartDateError("")
-    setCustomPointsError("")
+    setEndDateError("")
 
     // Validate name
     if (!name.trim()) {
@@ -150,32 +173,40 @@ export default function CreateSeriesPage() {
       isValid = false
     }
 
-    // Validate start date
-    if (!startDate) {
-      setStartDateError("Start date is required")
-      isValid = false
-    }
+    // Validate dates against season constraints
+    if (selectedSeason) {
+      // If start date is provided, validate it's not before season start
+      if (startDate) {
+        const seriesStartDate = new Date(startDate)
 
-    // Validate end date is after start date
-    if (startDate && endDate && new Date(endDate) <= new Date(startDate)) {
-      setStartDateError("End date must be after start date")
-      isValid = false
-    }
-
-    // Validate custom points config
-    if (pointsSystem === "custom") {
-      try {
-        if (!customPointsConfig.trim()) {
-          setCustomPointsError("Custom points configuration is required")
-          isValid = false
-        } else {
-          JSON.parse(customPointsConfig)
+        if (selectedSeason.startDate) {
+          const seasonStartDate = new Date(selectedSeason.startDate)
+          if (seriesStartDate < seasonStartDate) {
+            setStartDateError(`Start date cannot be before season start (${selectedSeason.startDate})`)
+            isValid = false
+          }
         }
-      } catch (err) {
-        console.error(err)
-        setCustomPointsError("Invalid JSON format")
-        isValid = false
+      } else {
+        // If start date is not provided, we'll use season start date
+        // No validation error needed
       }
+
+      // If end date is provided, validate it's not after season end (if season end exists)
+      if (endDate && selectedSeason.endDate) {
+        const seriesEndDate = new Date(endDate)
+        const seasonEndDate = new Date(selectedSeason.endDate)
+
+        if (seriesEndDate > seasonEndDate) {
+          setEndDateError(`End date cannot be after season end (${selectedSeason.endDate})`)
+          isValid = false
+        }
+      }
+    }
+
+    // Validate end date is after start date (if both are provided)
+    if (startDate && endDate && new Date(endDate) <= new Date(startDate)) {
+      setEndDateError("End date must be after start date")
+      isValid = false
     }
 
     return isValid
@@ -199,14 +230,19 @@ export default function CreateSeriesPage() {
       formData.append("name", name)
       formData.append("leagueId", leagueId)
       formData.append("seasonId", seasonId)
-      formData.append("startDate", startDate)
+
+      // Use season start date if start date is not provided
+      const finalStartDate = startDate || selectedSeason?.startDate || new Date().toISOString().split("T")[0]
+      formData.append("startDate", finalStartDate)
+
       if (endDate) formData.append("endDate", endDate)
       if (description) formData.append("description", description)
       if (isActive) formData.append("isActive", "on")
-      formData.append("pointsSystem", pointsSystem)
-      if (pointsSystem === "custom" && customPointsConfig) {
-        formData.append("customPointsConfig", customPointsConfig)
-      }
+
+      // Points system is now managed at the season level
+      // Default to weighted scoring algorithm: points = total players * (11-rank), top 10 only
+      formData.append("pointsSystem", "weighted")
+
       formData.append("userId", user.userId)
 
       // Call server action
@@ -323,7 +359,7 @@ export default function CreateSeriesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="startDate" className="material-label">
-                    Start Date*
+                    Start Date
                   </label>
                   <input
                     id="startDate"
@@ -333,7 +369,16 @@ export default function CreateSeriesPage() {
                     className={`material-input ${startDateError ? "border-destructive" : ""}`}
                     disabled={state === "submitting"}
                   />
-                  {startDateError && <p className="text-destructive text-xs mt-1">{startDateError}</p>}
+                  {startDateError ? (
+                    <p className="text-destructive text-xs mt-1">{startDateError}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">Defaults to season start date if not specified</p>
+                  )}
+                  {selectedSeason?.startDate && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Season starts: {new Date(selectedSeason.startDate).toLocaleDateString()}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -345,10 +390,19 @@ export default function CreateSeriesPage() {
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="material-input"
+                    className={`material-input ${endDateError ? "border-destructive" : ""}`}
                     disabled={state === "submitting"}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Leave blank for ongoing series</p>
+                  {endDateError ? (
+                    <p className="text-destructive text-xs mt-1">{endDateError}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">Leave blank for ongoing series</p>
+                  )}
+                  {selectedSeason?.endDate && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Season ends: {new Date(selectedSeason.endDate).toLocaleDateString()}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -366,56 +420,13 @@ export default function CreateSeriesPage() {
                 />
               </div>
 
-              <div>
-                <label htmlFor="pointsSystem" className="material-label flex items-center gap-2">
-                  Points System
-                  <div className="relative group">
-                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                    <div className="absolute left-full ml-2 top-0 w-64 p-2 bg-white border border-gray-200 rounded shadow-md hidden group-hover:block z-10 text-xs">
-                      <p>
-                        <strong>Standard:</strong> 1st: 100pts, 2nd: 90pts, decreasing by 10 for each position
-                      </p>
-                      <p>
-                        <strong>Weighted:</strong> Points based on tournament size and buy-in
-                      </p>
-                      <p>
-                        <strong>Custom:</strong> Define your own points structure
-                      </p>
-                    </div>
-                  </div>
-                </label>
-                <select
-                  id="pointsSystem"
-                  value={pointsSystem}
-                  onChange={(e) => setPointsSystem(e.target.value as PointsSystem)}
-                  className="material-input"
-                  disabled={state === "submitting"}
-                >
-                  <option value="standard">Standard</option>
-                  <option value="weighted">Weighted</option>
-                  <option value="custom">Custom</option>
-                </select>
+              <div className="bg-blue-50 p-4 rounded-md">
+                <p className="text-sm text-blue-700">
+                  <strong>Note:</strong> Points system is now configured at the season level. All series in this season
+                  will use the weighted scoring algorithm where points = total players * (11-rank) and only the top 10
+                  players receive points.
+                </p>
               </div>
-
-              {pointsSystem === "custom" && (
-                <div>
-                  <label htmlFor="customPointsConfig" className="material-label">
-                    Custom Points Configuration (JSON)
-                  </label>
-                  <textarea
-                    id="customPointsConfig"
-                    value={customPointsConfig}
-                    onChange={(e) => setCustomPointsConfig(e.target.value)}
-                    className={`material-input min-h-[100px] font-mono text-sm ${customPointsError ? "border-destructive" : ""}`}
-                    placeholder='{"1": 100, "2": 90, "3": 80, "4": 70, "5": 60}'
-                    disabled={state === "submitting"}
-                  />
-                  {customPointsError && <p className="text-destructive text-xs mt-1">{customPointsError}</p>}
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Enter a JSON object with position numbers as keys and point values as values
-                  </p>
-                </div>
-              )}
 
               <div className="flex items-center">
                 <input

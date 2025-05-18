@@ -1,5 +1,4 @@
-import { AppLayout } from "@/components/layout/app-layout";
-import { Button } from "@/components/ui/button";
+ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -20,9 +19,7 @@ export default async function TournamentDetailsPage(
   const tournamentId = params.id;
 
   return (
-    <AppLayout
-      title={`Tournament Details: Summer Series Tournament #${tournamentId}`}
-    >
+    <>
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between gap-4">
           <div>
@@ -311,6 +308,6 @@ export default async function TournamentDetailsPage(
           </TabsContent>
         </Tabs>
       </div>
-    </AppLayout>
+    </>
   );
 }

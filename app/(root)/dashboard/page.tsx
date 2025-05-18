@@ -1,10 +1,9 @@
-import { AppLayout } from "@/components/layout/app-layout"
- import { Trophy, Calendar, Users, Plus, ChevronRight } from "lucide-react"
+  import { Trophy, Calendar, Users, Plus, ChevronRight } from "lucide-react"
 import Link from "next/link"
 
 export default function DashboardPage() {
   return (
-    <AppLayout title="Leagues Dashboard">
+    <>
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-medium">Leagues Dashboard</h1>
@@ -137,6 +136,6 @@ export default function DashboardPage() {
         </div>
       </div>
  
-    </AppLayout>
+    </>
   )
 }

@@ -1,10 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Users, Search, Filter, Loader2, AlertCircle } from "lucide-react"
+ import { Users, Search, Filter, Loader2, AlertCircle, ArrowUpDown } from "lucide-react"
 import Link from "next/link"
-import { getPlayers, PlayerListItem } from "../../__actions/players"
- 
+import { getPlayers, type PlayerListItem } from "@/app/__actions/players"
+
 export default function PlayersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -13,6 +13,8 @@ export default function PlayersPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [sortField, setSortField] = useState<"tournamentCount" | "totalPoints" | "bestFinish">("tournamentCount")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
 
   // Debounce search input
   useEffect(() => {
@@ -32,7 +34,23 @@ export default function PlayersPage() {
         const result = await getPlayers(debouncedSearch, currentPage)
 
         if (result.success && result.data) {
-          setPlayers(result.data.players)
+          const sortedPlayers = [...result.data.players]
+
+          // Client-side sorting (server already sorts by tournament count desc by default)
+          if (sortField !== "tournamentCount" || sortDirection !== "desc") {
+            sortedPlayers.sort((a, b) => {
+              const valueA = a[sortField]
+              const valueB = b[sortField]
+
+              if (sortDirection === "asc") {
+                return valueA - valueB
+              } else {
+                return valueB - valueA
+              }
+            })
+          }
+
+          setPlayers(sortedPlayers)
           setTotalPages(result.data.totalPages)
         } else {
           setError(result.error || "Failed to fetch players")
@@ -46,13 +64,24 @@ export default function PlayersPage() {
     }
 
     fetchPlayers()
-  }, [debouncedSearch, currentPage])
+  }, [debouncedSearch, currentPage, sortField, sortDirection])
 
   function getOrdinal(n: number) {
     if (n === 0) return "N/A"
     const s = ["th", "st", "nd", "rd"]
     const v = n % 100
     return n + (s[(v - 20) % 10] || s[v] || s[0])
+  }
+
+  const handleSort = (field: "tournamentCount" | "totalPoints" | "bestFinish") => {
+    if (field === sortField) {
+      // Toggle direction if clicking the same field
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+    } else {
+      // Default to descending for new field
+      setSortField(field)
+      setSortDirection("desc")
+    }
   }
 
   return (
@@ -112,9 +141,39 @@ export default function PlayersPage() {
               <thead>
                 <tr>
                   <th>Player</th>
-                  <th>Tournaments</th>
-                  <th>Best Finish</th>
-                  <th>Points</th>
+                  <th>
+                    <button
+                      className="flex items-center gap-1 hover:text-primary"
+                      onClick={() => handleSort("tournamentCount")}
+                    >
+                      Tournaments
+                      <ArrowUpDown
+                        className={`h-3 w-3 ${sortField === "tournamentCount" ? "text-primary" : "text-muted-foreground"}`}
+                      />
+                    </button>
+                  </th>
+                  <th>
+                    <button
+                      className="flex items-center gap-1 hover:text-primary"
+                      onClick={() => handleSort("bestFinish")}
+                    >
+                      Best Finish
+                      <ArrowUpDown
+                        className={`h-3 w-3 ${sortField === "bestFinish" ? "text-primary" : "text-muted-foreground"}`}
+                      />
+                    </button>
+                  </th>
+                  <th>
+                    <button
+                      className="flex items-center gap-1 hover:text-primary"
+                      onClick={() => handleSort("totalPoints")}
+                    >
+                      Points
+                      <ArrowUpDown
+                        className={`h-3 w-3 ${sortField === "totalPoints" ? "text-primary" : "text-muted-foreground"}`}
+                      />
+                    </button>
+                  </th>
                   <th>Status</th>
                   <th>Action</th>
                 </tr>
@@ -160,7 +219,7 @@ export default function PlayersPage() {
             <div className="flex justify-center mt-6">
               <div className="flex">
                 <button
-                  className="px-3 py-1 border border-gray-200 rounded-l-md hover:bg-muted disabled:opacity-50"
+                  className="px-3 py-1 border border-border rounded-l-md hover:bg-muted disabled:opacity-50"
                   onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
                 >
@@ -176,7 +235,7 @@ export default function PlayersPage() {
                   return (
                     <button
                       key={pageNum}
-                      className={`px-3 py-1 border-t border-b border-gray-200 ${
+                      className={`px-3 py-1 border-t border-b border-border ${
                         pageNum === currentPage ? "bg-primary text-primary-foreground" : "hover:bg-muted"
                       }`}
                       onClick={() => setCurrentPage(pageNum)}
@@ -187,7 +246,7 @@ export default function PlayersPage() {
                 })}
 
                 <button
-                  className="px-3 py-1 border border-gray-200 rounded-r-md hover:bg-muted disabled:opacity-50"
+                  className="px-3 py-1 border border-border rounded-r-md hover:bg-muted disabled:opacity-50"
                   onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
                 >
