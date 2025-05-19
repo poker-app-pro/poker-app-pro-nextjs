@@ -9,8 +9,8 @@ import { Calendar, Loader2, AlertCircle, HelpCircle } from "lucide-react"
 import { client } from "@/components/AmplifyClient"
 import { getCurrentUser } from "aws-amplify/auth"
 import { createSeason } from "@/app/__actions/seasons"
+import { FormSubmissionState, type FormSubmissionState as FormState } from "@/components/ui/form-submission-state"
 
-type FormState = "idle" | "submitting" | "success" | "error"
 type PointsSystem = "weighted" | "custom"
 
 interface League {
@@ -158,7 +158,7 @@ export default function CreateSeasonPage() {
         // Redirect to seasons page
         setTimeout(() => {
           router.push("/seasons")
-        }, 1000)
+        }, 1500)
       } else {
         throw new Error(result.error || "Failed to create season")
       }
@@ -175,12 +175,16 @@ export default function CreateSeasonPage() {
     <>
       <Breadcrumb items={breadcrumbItems} />
       <div className="max-w-3xl mx-auto">
-        {state === "error" && (
-          <div className="bg-destructive/10 text-destructive p-4 rounded-md mb-6 flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            <p>{error}</p>
-          </div>
-        )}
+        {/* Form Submission State Overlay */}
+        <FormSubmissionState
+          state={state}
+          title="Season"
+          icon={<Calendar className="h-8 w-8 text-green-600" />}
+          successTitle="Season Created Successfully!"
+          successMessage="Your new season has been created."
+          errorMessage={error}
+          redirectMessage="Redirecting to seasons page..."
+        />
 
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
@@ -197,6 +201,13 @@ export default function CreateSeasonPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="material-card-content space-y-6">
+              {state === "error" && (
+                <div className="bg-destructive/10 text-destructive p-4 rounded-md mb-6 flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5" />
+                  <p>{error}</p>
+                </div>
+              )}
+
               <div>
                 <label htmlFor="league" className="material-label">
                   League*

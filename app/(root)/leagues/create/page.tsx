@@ -8,6 +8,7 @@ import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Trophy, Loader2, AlertCircle, ImageIcon } from "lucide-react";
 import { client } from "@/components/AmplifyClient";
 import { getCurrentUser } from "aws-amplify/auth";
+import { FormSubmissionState } from "@/components/ui/form-submission-state";
 
 type FormState = "idle" | "submitting" | "success" | "error";
 
@@ -91,7 +92,16 @@ export default function CreateLeaguePage() {
             <p>{error}</p>
           </div>
         )}
-
+         {/* Form Submission State Overlay */}
+        <FormSubmissionState
+          state={state}
+          title="New League"
+          icon={<Trophy className="h-8 w-8 text-green-600" />}
+          successTitle="Results Recorded Successfully!"
+          successMessage="The league has been saved."
+          errorMessage={error}
+          redirectMessage="Redirecting to leagues page..."
+        />
         <div className="material-card">
           <div className="material-card-header">
             <h2 className="material-card-title flex items-center gap-2">

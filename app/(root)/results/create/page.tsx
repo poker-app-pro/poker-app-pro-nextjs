@@ -9,8 +9,7 @@ import { PlayerAutoSuggest } from "@/components/ui/player-auto-suggest"
 import { client } from "@/components/AmplifyClient"
 import { saveGameResults } from "@/app/__actions/results"
 import { DraggablePlayerList } from "@/components/dashboard/draggable-player-list"
-
-type FormState = "idle" | "submitting" | "success" | "error"
+import { FormSubmissionState, type FormSubmissionState as FormState } from "@/components/ui/form-submission-state"
 
 interface Player {
   id: string
@@ -293,7 +292,7 @@ export default function CreateTournamentPage() {
         // After 1 second, redirect to results page
         setTimeout(() => {
           router.push("/results")
-        }, 1000)
+        }, 1500)
       } else {
         setState("error")
         setError(result.error || "An error occurred while recording the tournament results. Please try again.")
@@ -311,236 +310,236 @@ export default function CreateTournamentPage() {
     <>
       <Breadcrumb items={breadcrumbItems} />
       <div className="max-w-3xl mx-auto">
-        {state === "error" && (
-          <div className="bg-destructive/10 text-destructive p-4 rounded-md mb-6 flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            <p>{error}</p>
-          </div>
-        )}
+        {/* Form Submission State Overlay */}
+        <FormSubmissionState
+          state={state}
+          title="Tournament Results"
+          icon={<Trophy className="h-8 w-8 text-green-600" />}
+          successTitle="Results Recorded Successfully!"
+          successMessage="The tournament results have been saved."
+          errorMessage={error}
+          redirectMessage="Redirecting to tournaments page..."
+        />
 
-        {state === "success" ? (
-          <div className="material-card p-6 text-center">
-            <div className="h-16 w-16 rounded-full bg-primary/10 text-primary mx-auto mb-4 flex items-center justify-center">
-              <Trophy className="h-8 w-8" />
-            </div>
-            <h2 className="text-2xl font-medium mb-2">Results Recorded Successfully!</h2>
-            <p className="text-muted-foreground mb-6">The tournament results have been saved.</p>
-            <p className="text-sm text-muted-foreground">Redirecting to tournaments page...</p>
+        <div className="material-card">
+          <div className="material-card-header">
+            <h2 className="material-card-title flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-primary" />
+              Record Tournament Results
+            </h2>
+            <p className="material-card-subtitle">Record the results of a completed tournament</p>
           </div>
-        ) : (
-          <div className="material-card">
-            <div className="material-card-header">
-              <h2 className="material-card-title flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-primary" />
-                Record Tournament Results
-              </h2>
-              <p className="material-card-subtitle">Record the results of a completed tournament</p>
+
+          <form onSubmit={handleSubmit} className="material-card-content space-y-6">
+            {state === "error" && (
+              <div className="bg-destructive/10 text-destructive p-4 rounded-md mb-6 flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                <p>{error}</p>
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="series" className="material-label">
+                Series*
+              </label>
+              <select
+                id="series"
+                value={seriesId}
+                onChange={(e) => setSeriesId(e.target.value)}
+                className={`material-input ${seriesError ? "border-destructive" : ""}`}
+                disabled={state === "submitting"}
+              >
+                <option value="">Select a series</option>
+                {Object.entries(GROUPED_SERIES).map(([tournament, seriesList]) => (
+                  <optgroup key={tournament} label={tournament}>
+                    {seriesList.map((series) => (
+                      <option key={series.id} value={series.id}>
+                        {series.name} ({series.leagueName})
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              {seriesError && <p className="text-destructive text-xs mt-1">{seriesError}</p>}
             </div>
 
-            <form onSubmit={handleSubmit} className="material-card-content space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="series" className="material-label">
-                  Series*
+                <label htmlFor="totalPlayers" className="material-label">
+                  Total Players*
                 </label>
-                <select
-                  id="series"
-                  value={seriesId}
-                  onChange={(e) => setSeriesId(e.target.value)}
-                  className={`material-input ${seriesError ? "border-destructive" : ""}`}
+                <input
+                  id="totalPlayers"
+                  type="number"
+                  min={rankingPlayers.length > 0 ? rankingPlayers.length : 1}
+                  value={totalPlayers || ""}
+                  onChange={(e) => setTotalPlayers(Number.parseInt(e.target.value) || 0)}
+                  className={`material-input ${totalPlayersError ? "border-destructive" : ""}`}
                   disabled={state === "submitting"}
-                >
-                  <option value="">Select a series</option>
-                  {Object.entries(GROUPED_SERIES).map(([tournament, seriesList]) => (
-                    <optgroup key={tournament} label={tournament}>
-                      {seriesList.map((series) => (
-                        <option key={series.id} value={series.id}>
-                          {series.name} ({series.leagueName})
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-                {seriesError && <p className="text-destructive text-xs mt-1">{seriesError}</p>}
+                />
+                {totalPlayersError ? (
+                  <p className="text-destructive text-xs mt-1">{totalPlayersError}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Must be at least equal to the number of ranked players ({rankingPlayers.length})
+                  </p>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="totalPlayers" className="material-label">
-                    Total Players*
-                  </label>
-                  <input
-                    id="totalPlayers"
-                    type="number"
-                    min={rankingPlayers.length > 0 ? rankingPlayers.length : 1}
-                    value={totalPlayers || ""}
-                    onChange={(e) => setTotalPlayers(Number.parseInt(e.target.value) || 0)}
-                    className={`material-input ${totalPlayersError ? "border-destructive" : ""}`}
-                    disabled={state === "submitting"}
-                  />
-                  {totalPlayersError ? (
-                    <p className="text-destructive text-xs mt-1">{totalPlayersError}</p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Must be at least equal to the number of ranked players ({rankingPlayers.length})
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="gameTime" className="material-label flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Game Time*
-                  </label>
-                  <input
-                    id="gameTime"
-                    type="datetime-local"
-                    value={gameTime}
-                    onChange={(e) => setGameTime(e.target.value)}
-                    className={`material-input ${gameTimeError ? "border-destructive" : ""}`}
-                    disabled={state === "submitting"}
-                  />
-                  {gameTimeError && <p className="text-destructive text-xs mt-1">{gameTimeError}</p>}
-                </div>
-              </div>
-
-              {/* Player Rankings Section */}
-              <div className="border border-gray-200 rounded-md p-4">
-                <label className="material-label flex items-center gap-2 mb-4">
-                  <Trophy className="h-4 w-4" />
-                  Player Rankings
+              <div>
+                <label htmlFor="gameTime" className="material-label flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Game Time*
                 </label>
+                <input
+                  id="gameTime"
+                  type="datetime-local"
+                  value={gameTime}
+                  onChange={(e) => setGameTime(e.target.value)}
+                  className={`material-input ${gameTimeError ? "border-destructive" : ""}`}
+                  disabled={state === "submitting"}
+                />
+                {gameTimeError && <p className="text-destructive text-xs mt-1">{gameTimeError}</p>}
+              </div>
+            </div>
 
-                <div className="space-y-4">
+            {/* Player Rankings Section */}
+            <div className="border border-gray-200 rounded-md p-4">
+              <label className="material-label flex items-center gap-2 mb-4">
+                <Trophy className="h-4 w-4" />
+                Player Rankings
+              </label>
+
+              <div className="space-y-4">
+                <PlayerAutoSuggest
+                  onSelect={(player) => handleAddPlayer(player, "rankings")}
+                  existingPlayers={availablePlayers}
+                  placeholder="Search players to add to rankings"
+                />
+
+                <DraggablePlayerList
+                  players={rankingPlayers}
+                  onPlayersChange={setRankingPlayers}
+                  onRemovePlayer={(player) => handleRemovePlayer(player, "rankings")}
+                />
+              </div>
+            </div>
+
+            {/* Player Bounties Section */}
+            <div className="border border-gray-200 rounded-md p-4">
+              <label className="material-label flex items-center gap-2 mb-4">
+                <Users className="h-4 w-4" />
+                Player Bounties
+              </label>
+
+              <div className="space-y-4">
+                {rankingPlayers.length === 0 ? (
+                  <div className="text-center py-4 border border-dashed border-gray-200 rounded-md">
+                    <p className="text-muted-foreground">Add players to rankings first to select bounties</p>
+                  </div>
+                ) : (
                   <PlayerAutoSuggest
-                    onSelect={(player) => handleAddPlayer(player, "rankings")}
-                    existingPlayers={availablePlayers}
-                    placeholder="Search players to add to rankings"
+                    onSelect={(player) => handleAddPlayer(player, "bounties")}
+                    existingPlayers={rankingPlayers.filter((player) => !bountyPlayers.some((p) => p.id === player.id))}
+                    placeholder="Select players from rankings to add as bounties"
+                    helperText="Only players from the rankings can be added as bounties"
                   />
+                )}
 
-                  <DraggablePlayerList
-                    players={rankingPlayers}
-                    onPlayersChange={setRankingPlayers}
-                    onRemovePlayer={(player) => handleRemovePlayer(player, "rankings")}
-                  />
-                </div>
-              </div>
-
-              {/* Player Bounties Section */}
-              <div className="border border-gray-200 rounded-md p-4">
-                <label className="material-label flex items-center gap-2 mb-4">
-                  <Users className="h-4 w-4" />
-                  Player Bounties
-                </label>
-
-                <div className="space-y-4">
-                  {rankingPlayers.length === 0 ? (
+                <div className="space-y-2">
+                  {bountyPlayers.length === 0 ? (
                     <div className="text-center py-4 border border-dashed border-gray-200 rounded-md">
-                      <p className="text-muted-foreground">Add players to rankings first to select bounties</p>
+                      <p className="text-muted-foreground">No bounty players added yet</p>
                     </div>
                   ) : (
-                    <PlayerAutoSuggest
-                      onSelect={(player) => handleAddPlayer(player, "bounties")}
-                      existingPlayers={rankingPlayers.filter(
-                        (player) => !bountyPlayers.some((p) => p.id === player.id),
-                      )}
-                      placeholder="Select players from rankings to add as bounties"
-                      helperText="Only players from the rankings can be added as bounties"
-                    />
+                    bountyPlayers.map((player) => (
+                      <div
+                        key={player.id}
+                        className="flex items-center justify-between bg-white border border-gray-200 rounded-md p-3"
+                      >
+                        <span>{player.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePlayer(player, "bounties")}
+                          className="text-muted-foreground hover:text-destructive transition-colors"
+                          disabled={state === "submitting"}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))
                   )}
-
-                  <div className="space-y-2">
-                    {bountyPlayers.length === 0 ? (
-                      <div className="text-center py-4 border border-dashed border-gray-200 rounded-md">
-                        <p className="text-muted-foreground">No bounty players added yet</p>
-                      </div>
-                    ) : (
-                      bountyPlayers.map((player) => (
-                        <div
-                          key={player.id}
-                          className="flex items-center justify-between bg-white border border-gray-200 rounded-md p-3"
-                        >
-                          <span>{player.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemovePlayer(player, "bounties")}
-                            className="text-muted-foreground hover:text-destructive transition-colors"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ))
-                    )}
-                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* Consolation Games Section */}
-              <div className="border border-gray-200 rounded-md p-4">
-                <label className="material-label flex items-center gap-2 mb-4">
-                  <Users className="h-4 w-4" />
-                  Consolation Games
-                </label>
+            {/* Consolation Games Section */}
+            <div className="border border-gray-200 rounded-md p-4">
+              <label className="material-label flex items-center gap-2 mb-4">
+                <Users className="h-4 w-4" />
+                Consolation Games
+              </label>
 
-                <div className="space-y-4">
-                  <PlayerAutoSuggest
-                    onSelect={(player) => handleAddPlayer(player, "consolation")}
-                    existingPlayers={availablePlayers}
-                    placeholder="Search players to add to consolation games"
-                  />
+              <div className="space-y-4">
+                <PlayerAutoSuggest
+                  onSelect={(player) => handleAddPlayer(player, "consolation")}
+                  existingPlayers={availablePlayers}
+                  placeholder="Search players to add to consolation games"
+                />
 
-                  <div className="space-y-2">
-                    {consolationPlayers.length === 0 ? (
-                      <div className="text-center py-4 border border-dashed border-gray-200 rounded-md">
-                        <p className="text-muted-foreground">No consolation players added yet</p>
-                      </div>
-                    ) : (
-                      consolationPlayers.map((player) => (
-                        <div
-                          key={player.id}
-                          className="flex items-center justify-between bg-white border border-gray-200 rounded-md p-3"
-                        >
-                          <span>{player.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemovePlayer(player, "consolation")}
-                            className="text-muted-foreground hover:text-destructive transition-colors"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-4 pt-4">
-                <button
-                  type="button"
-                  onClick={() => router.push("/results")}
-                  className="material-button-secondary"
-                  disabled={state === "submitting"}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="material-button-primary bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
-                  disabled={state === "submitting"}
-                >
-                  {state === "submitting" ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving Results...
-                    </>
+                <div className="space-y-2">
+                  {consolationPlayers.length === 0 ? (
+                    <div className="text-center py-4 border border-dashed border-gray-200 rounded-md">
+                      <p className="text-muted-foreground">No consolation players added yet</p>
+                    </div>
                   ) : (
-                    "Save Results"
+                    consolationPlayers.map((player) => (
+                      <div
+                        key={player.id}
+                        className="flex items-center justify-between bg-white border border-gray-200 rounded-md p-3"
+                      >
+                        <span>{player.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePlayer(player, "consolation")}
+                          className="text-muted-foreground hover:text-destructive transition-colors"
+                          disabled={state === "submitting"}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))
                   )}
-                </button>
+                </div>
               </div>
-            </form>
-          </div>
-        )}
+            </div>
+
+            <div className="flex justify-end gap-4 pt-4">
+              <button
+                type="button"
+                onClick={() => router.push("/results")}
+                className="material-button-secondary"
+                disabled={state === "submitting"}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="material-button-primary bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                disabled={state === "submitting"}
+              >
+                {state === "submitting" ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving Results...
+                  </>
+                ) : (
+                  "Save Results"
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </>
   )
