@@ -13,4 +13,9 @@ export function formatDate(date: Date): string {
     hour: "numeric",
     minute: "numeric",
   }).format(date)
+} 
+
+// Add a new function to format date with time
+export function formatDateTime(date: Date): string {
+  return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
 }

@@ -1,8 +1,7 @@
+import { getTournamentResults } from "@/app/__actions/results"
 import { Trophy, Plus, Calendar } from "lucide-react"
 import Link from "next/link"
-import { formatDate } from "@/lib/utils"
 import { Suspense } from "react" 
-import { getTournamentResults } from "@/app/__actions/results"
 
 export default function ResultsPage() {
   return (
@@ -56,7 +55,8 @@ async function ResultsContent() {
                 <h3 className="font-medium">{tournament.name}</h3>
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Calendar className="h-3.5 w-3.5 mr-1" />
-                  Game Date: {formatDate(new Date(tournament.gameTime))}
+                  {/* Format the date with time */}
+                  Game Date: {formatDateTime(new Date(tournament.gameTime))}
                 </div>
               </div>
             </div>
@@ -70,6 +70,11 @@ async function ResultsContent() {
       ))}
     </div>
   )
+}
+
+// Helper function to format date with time
+function formatDateTime(date: Date) {
+  return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
 }
 
 function ResultsLoading() {

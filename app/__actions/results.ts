@@ -411,17 +411,16 @@ export async function getTournamentResults() {
     const currentUser = await runWithAmplifyServerContext({
       nextServerContext: { cookies },
       operation: (contextSpec) => getCurrentUser(contextSpec),
-    });
+    })
 
     if (!currentUser) {
-      throw new Error("User not authenticated");
+      throw new Error("User not authenticated")
     }
 
     // Fetch tournaments
-    const { data: tournaments } =
-      await cookieBasedClient.models.Tournament.list({
-        authMode: "userPool",
-      });
+    const { data: tournaments } = await cookieBasedClient.models.Tournament.list({
+      authMode: "userPool",
+    })
 
     // Fetch tournament players for each tournament
     const tournamentResults = await Promise.all(
@@ -429,62 +428,60 @@ export async function getTournamentResults() {
         .filter((tournament) => tournament.status === "Completed")
         .map(async (tournament) => {
           // Get tournament players
-          const { data: tournamentPlayers } =
-            await cookieBasedClient.models.TournamentPlayer.list({
-              filter: { tournamentId: { eq: tournament.id } },
-              authMode: "userPool",
-            });
+          const { data: tournamentPlayers } = await cookieBasedClient.models.TournamentPlayer.list({
+            filter: { tournamentId: { eq: tournament.id } },
+            authMode: "userPool",
+          })
 
           // Get series info
-          let seriesName = "Unknown Series";
+          let seriesName = "Unknown Series"
           if (tournament.seriesId) {
             const { data: series } = await cookieBasedClient.models.Series.get(
               { id: tournament.seriesId },
-              { authMode: "userPool" }
-            );
+              { authMode: "userPool" },
+            )
             if (series) {
-              seriesName = series.name;
+              seriesName = series.name
             }
           }
 
           // Sort players by position and find winner
           const sortedPlayers = tournamentPlayers
             .slice()
-            .sort(
-              (a, b) => (a.finalPosition || 999) - (b.finalPosition || 999)
-            );
+            .sort((a, b) => (a.finalPosition || 999) - (b.finalPosition || 999))
 
-          let winner = "No results";
+          let winner = "No results"
           if (sortedPlayers.length > 0 && sortedPlayers[0].playerId) {
             const { data: player } = await cookieBasedClient.models.Player.get(
               { id: sortedPlayers[0].playerId },
-              { authMode: "userPool" }
-            );
+              { authMode: "userPool" },
+            )
             if (player) {
-              winner = player.name;
+              winner = player.name
             }
           }
+
+          // Use the full date string for gameTime, not just the date part
+          const gameTime = tournament.date || tournament.createdAt || new Date().toISOString()
 
           return {
             id: tournament.id,
             name: tournament.name,
             seriesName: seriesName,
-            gameTime: tournament.date,
+            gameTime: gameTime, // Use the full date-time string
             location: tournament.location || "Unknown Location",
-            totalPlayers: tournamentPlayers.length,
+            totalPlayers: tournament.totalPlayers || tournamentPlayers.length,
             winner,
             createdAt: tournament.createdAt,
-          };
-        })
-    );
+          }
+        }),
+    )
 
     // Sort by date (newest first)
-    return tournamentResults.sort(
-      (a, b) => new Date(b.gameTime).getTime() - new Date(a.gameTime).getTime()
-    );
+    return tournamentResults.sort((a, b) => new Date(b.gameTime).getTime() - new Date(a.gameTime).getTime())
   } catch (error) {
-    console.error("Error fetching tournament results:", error);
-    throw error;
+    console.error("Error fetching tournament results:", error)
+    throw error
   }
 }
 
