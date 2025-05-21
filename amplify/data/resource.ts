@@ -91,6 +91,7 @@ const schema = a.schema({
       blindStructure: a.string(),
       status: a.string(),
       maxPlayers: a.integer(),
+      totalPlayers: a.integer(),
       notes: a.string(),
       tournamentPlayers: a.string().array(),
       qualifications: a.string().array(),
