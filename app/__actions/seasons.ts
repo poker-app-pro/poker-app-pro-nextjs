@@ -222,6 +222,8 @@ export async function updateSeason(seasonId: string, formData: FormData) {
     // Get current season data
     const currentSeasonResult = await cookieBasedClient.models.Season.get({
       id: seasonId,
+    }, {
+      authMode: "userPool",
     });
     if (!currentSeasonResult.data) {
       return { success: false, error: "Season not found" };
@@ -287,6 +289,8 @@ export async function deleteSeason(seasonId: string) {
     // Get current season data to get related entities
     const currentSeasonResult = await cookieBasedClient.models.Season.get({
       id: seasonId,
+    }, {
+      authMode: "userPool",
     });
     if (!currentSeasonResult.data) {
       return { success: false, error: "Season not found" };
@@ -314,6 +318,8 @@ export async function deleteSeason(seasonId: string) {
     try {
       const leagueResult = await cookieBasedClient.models.League.get({
         id: leagueId,
+      }, {
+        authMode: "userPool",
       });
       if (leagueResult.data && leagueResult.data.seasons) {
         const updatedSeasons = leagueResult.data.seasons.filter(
@@ -338,6 +344,8 @@ export async function deleteSeason(seasonId: string) {
     try {
       const userResult = await cookieBasedClient.models.User.get({
         id: userId,
+      }, {
+        authMode: "userPool",
       });
       if (userResult.data && userResult.data.seasons) {
         const updatedSeasons = userResult.data.seasons.filter(

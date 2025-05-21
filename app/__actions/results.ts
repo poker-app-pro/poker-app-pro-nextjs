@@ -626,3 +626,214 @@ export async function getTournamentResultDetails(tournamentId: string) {
     throw error
   }
 }
+
+export async function updateTournamentResult(id: string, formData: FormData) {
+  try {
+    // Get the existing tournament first
+    const tournamentResult = await cookieBasedClient.models.Tournament.get({ id }, { authMode: "userPool" })
+
+    if (!tournamentResult.data) {
+      return { success: false, error: "Tournament not found" }
+    }
+
+    const tournament = tournamentResult.data
+
+    // Extract form data
+    const name = formData.get("name") as string
+    const gameTime = formData.get("gameTime") as string
+    const location = formData.get("location") as string
+    const buyIn = Number.parseFloat(formData.get("buyIn") as string) || 0
+    const prizePool = Number.parseFloat(formData.get("prizePool") as string) || 0
+
+    // Validate required fields
+    if (!name.trim()) {
+      return { success: false, error: "Tournament name is required" }
+    }
+
+    if (!gameTime) {
+      return { success: false, error: "Game date and time is required" }
+    }
+
+    // Update the tournament
+    const result = await cookieBasedClient.models.Tournament.update(
+      {
+        id,
+        name,
+        date: new Date(gameTime).toISOString(),
+        location,
+        buyIn,
+      },
+      {
+        authMode: "userPool",
+      },
+    )
+
+    // Log activity
+    try {
+      await cookieBasedClient.models.ActivityLog.create(
+        {
+          userId: tournament.userId,
+          action: "UPDATE",
+          entityType: "Tournament",
+          entityId: id,
+          details: { name },
+          timestamp: new Date().toISOString(),
+        },
+        {
+          authMode: "userPool",
+        },
+      )
+    } catch (logError) {
+      console.error("Error logging activity:", logError)
+      // Continue even if logging fails
+    }
+
+    revalidatePath("/results")
+    revalidatePath(`/results/${id}`)
+    return { success: true, data: result.data }
+  } catch (error) {
+    console.error("Error updating tournament result:", error)
+    return { success: false, error: "Failed to update tournament result" }
+  }
+}
+
+export async function deleteTournamentResult(id: string) {
+  try {
+    // Get the tournament first to check relationships and get userId for logging
+    const tournamentResult = await cookieBasedClient.models.Tournament.get({ id }, { authMode: "userPool" })
+
+    if (!tournamentResult.data) {
+      return { success: false, error: "Tournament not found" }
+    }
+
+    const tournament = tournamentResult.data
+    const userId = tournament.userId
+
+    // Delete tournament players first
+    if (tournament.tournamentPlayers && tournament.tournamentPlayers.length > 0) {
+      for (const tpId of tournament.tournamentPlayers) {
+        await cookieBasedClient.models.TournamentPlayer.delete(
+          { id: tpId as string },
+          {
+            authMode: "userPool",
+          },
+        )
+      }
+    }
+
+    // Remove tournament from series
+    if (tournament.seriesId) {
+      try {
+        const seriesResult = await cookieBasedClient.models.Series.get(
+          { id: tournament.seriesId },
+          { authMode: "userPool" },
+        )
+
+        if (seriesResult.data) {
+          const updatedTournaments = (seriesResult.data.tournaments || []).filter((tournamentId) => tournamentId !== id)
+
+          await cookieBasedClient.models.Series.update(
+            {
+              id: tournament.seriesId,
+              tournaments: updatedTournaments,
+            },
+            {
+              authMode: "userPool",
+            },
+          )
+        }
+      } catch (seriesError) {
+        console.error("Error updating series tournaments:", seriesError)
+        // Continue even if series update fails
+      }
+    }
+
+    // Remove tournament from season
+    if (tournament.seasonId) {
+      try {
+        const seasonResult = await cookieBasedClient.models.Season.get(
+          { id: tournament.seasonId },
+          { authMode: "userPool" },
+        )
+
+        if (seasonResult.data) {
+          const updatedTournaments = (seasonResult.data.tournaments || []).filter((tournamentId) => tournamentId !== id)
+
+          await cookieBasedClient.models.Season.update(
+            {
+              id: tournament.seasonId,
+              tournaments: updatedTournaments,
+            },
+            {
+              authMode: "userPool",
+            },
+          )
+        }
+      } catch (seasonError) {
+        console.error("Error updating season tournaments:", seasonError)
+        // Continue even if season update fails
+      }
+    }
+
+    // Remove tournament from league
+    if (tournament.leagueId) {
+      try {
+        const leagueResult = await cookieBasedClient.models.League.get(
+          { id: tournament.leagueId },
+          { authMode: "userPool" },
+        )
+
+        if (leagueResult.data) {
+          const updatedTournaments = (leagueResult.data.tournaments || []).filter((tournamentId) => tournamentId !== id)
+
+          await cookieBasedClient.models.League.update(
+            {
+              id: tournament.leagueId,
+              tournaments: updatedTournaments,
+            },
+            {
+              authMode: "userPool",
+            },
+          )
+        }
+      } catch (leagueError) {
+        console.error("Error updating league tournaments:", leagueError)
+        // Continue even if league update fails
+      }
+    }
+
+    // Delete the tournament
+    await cookieBasedClient.models.Tournament.delete(
+      { id },
+      {
+        authMode: "userPool",
+      },
+    )
+
+    // Log activity
+    try {
+      await cookieBasedClient.models.ActivityLog.create(
+        {
+          userId,
+          action: "DELETE",
+          entityType: "Tournament",
+          entityId: id,
+          details: { name: tournament.name },
+          timestamp: new Date().toISOString(),
+        },
+        {
+          authMode: "userPool",
+        },
+      )
+    } catch (logError) {
+      console.error("Error logging activity:", logError)
+      // Continue even if logging fails
+    }
+
+    revalidatePath("/results")
+    return { success: true }
+  } catch (error) {
+    console.error("Error deleting tournament result:", error)
+    return { success: false, error: "Failed to delete tournament result" }
+  }
+}

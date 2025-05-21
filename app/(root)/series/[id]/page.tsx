@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation"; 
 import {
   Star,
   Calendar,
@@ -13,13 +13,20 @@ import {
   Loader2,
   AlertCircle,
   ChevronRight,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { getSeries, getTournamentsBySeries } from "@/app/__actions/series";
+import {
+  getSeries,
+  getTournamentsBySeries,
+  deleteSeries,
+} from "@/app/__actions/series";
+import { DeleteConfirmationModal } from "@/components/ui/delete-confirmation-modal";
 import { getSeriesStandings } from "@/app/__actions/standings";
 
 export default function SeriesDetailsPage() {
   const params = useParams();
+  const router = useRouter();
   const seriesId = params.id as string;
 
   const [loading, setLoading] = useState(true);
@@ -29,6 +36,9 @@ export default function SeriesDetailsPage() {
   const [standings, setStandings] = useState<any[]>([]);
   const [seasonName, setSeasonName] = useState("");
   const [leagueName, setLeagueName] = useState("");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchSeriesData() {
@@ -89,6 +99,30 @@ export default function SeriesDetailsPage() {
       fetchSeriesData();
     }
   }, [seriesId]);
+
+  async function handleDelete() {
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const result = await deleteSeries(seriesId, series.userId);
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to delete series");
+      }
+
+      // Close the modal and redirect
+      setIsDeleteModalOpen(false);
+      router.push("/series");
+    } catch (err) {
+      console.error("Error deleting series:", err);
+      setDeleteError(
+        err instanceof Error ? err.message : "An unexpected error occurred"
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   // Calculate series statistics
   const calculateStats = () => {
@@ -291,24 +325,25 @@ export default function SeriesDetailsPage() {
                 )}
 
                 <div className="flex flex-wrap gap-2">
-                  <Link href={`/results/create`}>
+                  <Link href={`/results/create?seriesId=${seriesId}`}>
                     <button className="material-button-primary bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
                       <Plus className="h-4 w-4" />
                       Add Tournament
                     </button>
                   </Link>
-                   {/* <Link href={`/series/${seriesId}/edit`}>
+                  <Link href={`/series/${seriesId}/edit`}>
                     <button className="material-button-secondary flex items-center gap-2">
                       <Edit className="h-4 w-4" />
                       Edit Series
                     </button>
                   </Link>
-                 <Link href={`/standings/${seriesId}`}>
-                    <button className="material-button-secondary flex items-center gap-2">
-                      <BarChart2 className="h-4 w-4" />
-                      View Standings
-                    </button>
-                  </Link> */}
+                  <button
+                    className="material-button-secondary text-red-600 hover:bg-red-50 flex items-center gap-2"
+                    onClick={() => setIsDeleteModalOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete Series
+                  </button>
                 </div>
               </div>
             </div>
@@ -368,178 +403,22 @@ export default function SeriesDetailsPage() {
               )}
             </div>
           </div>
-
-          {/* <div className="material-card">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary-50 flex items-center justify-center">
-                  <Calendar className="h-5 w-5 text-primary" />
-                </div>
-                <h3 className="text-lg font-medium">Tournaments</h3>
-              </div>
-              <Link href={`/results/create?seriesId=${seriesId}`}>
-                <button className="material-button-secondary text-sm flex items-center gap-1">
-                  <Plus className="h-4 w-4" />
-                  Add Tournament
-                </button>
-              </Link>
-            </div>
-
-            {tournaments.length === 0 ? (
-              <div className="text-center py-8 border border-dashed border-gray-200 rounded-md">
-                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Tournaments Yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  This series doesn't have any tournaments yet.
-                </p>
-                <Link href={`/results/create?seriesId=${seriesId}`}>
-                  <button className="material-button-primary">
-                    Add First Tournament
-                  </button>
-                </Link>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="material-data-table">
-                  <thead>
-                    <tr>
-                      <th>Tournament</th>
-                      <th>Date</th>
-                      <th>Players</th>
-                      <th>Winner</th>
-                      <th>Status</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tournaments.map((tournament: any) => {
-                      // Find winner (player with position 1)
-                      let winnerName = "No results";
-                      if (
-                        tournament.tournamentPlayers &&
-                        tournament.tournamentPlayers.length > 0
-                      ) {
-                        // This would require additional data fetching in a real implementation
-                        // For now, we'll use a placeholder
-                        winnerName = "Winner TBD";
-                      }
-
-                      return (
-                        <tr key={tournament.id}>
-                          <td className="font-medium">{tournament.name}</td>
-                          <td>{formatDate(tournament.date)}</td>
-                          <td>{tournament.totalPlayers || "N/A"}</td>
-                          <td>{winnerName}</td>
-                          <td>
-                            <span
-                              className={`material-chip ${
-                                tournament.isFinalized ||
-                                tournament.status === "Completed"
-                                  ? "bg-green-50 text-green-700"
-                                  : tournament.status === "Scheduled"
-                                    ? "bg-blue-50 text-blue-700"
-                                    : "bg-muted text-muted-foreground"
-                              }`}
-                            >
-                              {tournament.isFinalized ||
-                              tournament.status === "Completed"
-                                ? "Completed"
-                                : tournament.status || "Draft"}
-                            </span>
-                          </td>
-                          <td>
-                            <Link href={`/results/${tournament.id}`}>
-                              <button className="material-button-secondary text-sm py-1">
-                                View
-                              </button>
-                            </Link>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div> */}
-
-          {/* <div className="material-card mt-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-10 w-10 rounded-full bg-primary-50 flex items-center justify-center">
-                <BarChart2 className="h-5 w-5 text-primary" />
-              </div>
-              <h3 className="text-lg font-medium">Series Standings</h3>
-            </div>
-
-            {standings.length === 0 ? (
-              <div className="text-center py-8 border border-dashed border-gray-200 rounded-md">
-                <BarChart2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Standings Yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Standings will appear once tournaments have been completed.
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="material-data-table">
-                  <thead>
-                    <tr>
-                      <th>Rank</th>
-                      <th>Player</th>
-                      <th>Regular</th>
-                      <th>Bounty</th>
-                      <th>Consolation</th>
-                      <th>Total Points</th>
-                      <th>Tournaments</th>
-                      <th>Best Finish</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {standings.map((player, index) => (
-                      <tr key={player.id}>
-                        <td className="w-16 text-center">{index + 1}</td>
-                        <td>
-                          <Link
-                            href={`/players/${player.playerId}`}
-                            className="hover:text-primary"
-                          >
-                            {player.playerName}
-                          </Link>
-                        </td>
-                        <td className="text-right">{player.regularPoints}</td>
-                        <td className="text-right">{player.bountyPoints}</td>
-                        <td className="text-right">
-                          {player.consolationPoints}
-                        </td>
-                        <td className="text-right font-medium">
-                          {player.totalPoints}
-                        </td>
-                        <td className="text-center">
-                          {player.tournamentCount}
-                        </td>
-                        <td className="text-center">
-                          {player.bestFinish
-                            ? `${player.bestFinish}${getOrdinalSuffix(player.bestFinish)}`
-                            : "N/A"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {standings.length > 0 && (
-              <div className="mt-4 text-center">
-                <Link href={`/standings/${seriesId}`}>
-                  <button className="material-button-secondary">
-                    View Full Standings
-                  </button>
-                </Link>
-              </div>
-            )}
-          </div> */}
         </>
+      )}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Series"
+        message={`Are you sure you want to delete "${series?.name}"? This action cannot be undone. All standings data for this series will be permanently removed. Note: You must delete all tournaments in this series before it can be deleted.`}
+        isDeleting={isDeleting}
+      />
+
+      {deleteError && (
+        <div className="fixed bottom-4 right-4 bg-destructive/10 text-destructive p-4 rounded-md shadow-lg max-w-md">
+          <p className="font-medium">Error</p>
+          <p>{deleteError}</p>
+        </div>
       )}
     </>
   );

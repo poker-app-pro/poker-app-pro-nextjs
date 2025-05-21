@@ -186,7 +186,7 @@ export async function createSeries(formData: FormData) {
     }
 
     // Update the season to include this series
-    const season = await cookieBasedClient.models.Season.get({ id: seasonId })
+    const season = await cookieBasedClient.models.Season.get({ id: seasonId }, { authMode: "userPool" })
     if (season && season.data) {
       const updatedSeries = [...(season.data.series || []), result.data.id]
       await cookieBasedClient.models.Season.update(
@@ -201,7 +201,9 @@ export async function createSeries(formData: FormData) {
     }
 
     // Update the league to include this series
-    const league = await cookieBasedClient.models.League.get({ id: leagueId })
+    const league = await cookieBasedClient.models.League.get({ id: leagueId }, {
+      authMode: "userPool",
+    })
     if (league && league.data) {
       const updatedSeries = [...(league.data.series || []), result.data.id]
       await cookieBasedClient.models.League.update(
@@ -217,7 +219,7 @@ export async function createSeries(formData: FormData) {
 
     // Update user's series list
     try {
-      const user = await cookieBasedClient.models.User.get({ id: userId })
+      const user = await cookieBasedClient.models.User.get({ id: userId }, {authMode: "userPool"})
       if (user && user.data) {
         await cookieBasedClient.models.User.update(
           {
@@ -266,3 +268,153 @@ export async function createSeries(formData: FormData) {
     return { success: false, error: "Failed to create series" }
   }
 }
+
+
+export async function deleteSeries(id: string, userId: string) {
+  try {
+    // Get the series first to check relationships
+    const seriesResult = await cookieBasedClient.models.Series.get({ id }, { authMode: "userPool" })
+
+    if (!seriesResult.data) {
+      return { success: false, error: "Series not found" }
+    }
+
+    const series = seriesResult.data
+
+    // Check if series has tournaments
+    if (series.tournaments && series.tournaments.length > 0) {
+      return {
+        success: false,
+        error: "Cannot delete series with existing tournaments. Please delete all tournaments first.",
+      }
+    }
+
+    // Remove series from season
+    if (series.seasonId) {
+      try {
+        const seasonResult = await cookieBasedClient.models.Season.get(
+          { id: series.seasonId },
+          { authMode: "userPool" },
+        )
+
+        if (seasonResult.data) {
+          const updatedSeries = (seasonResult.data.series || []).filter((seriesId) => seriesId !== id)
+
+          await cookieBasedClient.models.Season.update(
+            {
+              id: series.seasonId,
+              series: updatedSeries,
+            },
+            {
+              authMode: "userPool",
+            },
+          )
+        }
+      } catch (seasonError) {
+        console.error("Error updating season series:", seasonError)
+        // Continue even if season update fails
+      }
+    }
+
+    // Remove series from league
+    if (series.leagueId) {
+      try {
+        const leagueResult = await cookieBasedClient.models.League.get(
+          { id: series.leagueId },
+          { authMode: "userPool" },
+        )
+
+        if (leagueResult.data) {
+          const updatedSeries = (leagueResult.data.series || []).filter((seriesId) => seriesId !== id)
+
+          await cookieBasedClient.models.League.update(
+            {
+              id: series.leagueId,
+              series: updatedSeries,
+            },
+            {
+              authMode: "userPool",
+            },
+          )
+        }
+      } catch (leagueError) {
+        console.error("Error updating league series:", leagueError)
+        // Continue even if league update fails
+      }
+    }
+
+    // Delete scoreboards associated with this series
+    if (series.scoreboards && series.scoreboards.length > 0) {
+      for (const scoreboardId of series.scoreboards) {
+        await cookieBasedClient.models.Scoreboard.delete(
+          { id: scoreboardId as string },
+          {
+            authMode: "userPool",
+          },
+        )
+      }
+    }
+
+    // Delete the series
+    await cookieBasedClient.models.Series.delete(
+      { id },
+      {
+        authMode: "userPool",
+      },
+    )
+
+    // Update the user's series array
+    try {
+      const userResult = await cookieBasedClient.models.User.get(
+        { id: userId },
+        {
+          authMode: "userPool",
+        },
+      )
+
+      if (userResult.data) {
+        const updatedSeries = (userResult.data.series || []).filter((seriesId) => seriesId !== id)
+
+        await cookieBasedClient.models.User.update(
+          {
+            id: userId,
+            series: updatedSeries,
+          },
+          {
+            authMode: "userPool",
+          },
+        )
+      }
+    } catch (userError) {
+      console.error("Error updating user series:", userError)
+      // Continue even if user update fails
+    }
+
+    // Log activity
+    try {
+      await cookieBasedClient.models.ActivityLog.create(
+        {
+          userId,
+          action: "DELETE",
+          entityType: "Series",
+          entityId: id,
+          details: { name: series.name },
+          timestamp: new Date().toISOString(),
+        },
+        {
+          authMode: "userPool",
+        },
+      )
+    } catch (logError) {
+      console.error("Error logging activity:", logError)
+      // Continue even if logging fails
+    }
+
+    revalidatePath("/series")
+    return { success: true }
+  } catch (error) {
+    console.error("Error deleting series:", error)
+    return { success: false, error: "Failed to delete series" }
+  }
+}
+
