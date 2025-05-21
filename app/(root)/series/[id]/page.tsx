@@ -297,13 +297,13 @@ export default function SeriesDetailsPage() {
                       Add Tournament
                     </button>
                   </Link>
-                  <Link href={`/series/${seriesId}/edit`}>
+                   {/* <Link href={`/series/${seriesId}/edit`}>
                     <button className="material-button-secondary flex items-center gap-2">
                       <Edit className="h-4 w-4" />
                       Edit Series
                     </button>
                   </Link>
-                  {/* <Link href={`/standings/${seriesId}`}>
+                 <Link href={`/standings/${seriesId}`}>
                     <button className="material-button-secondary flex items-center gap-2">
                       <BarChart2 className="h-4 w-4" />
                       View Standings

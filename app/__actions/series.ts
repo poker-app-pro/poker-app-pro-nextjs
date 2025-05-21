@@ -15,6 +15,36 @@ export async function getSeries() {
   }
 }
 
+export async function getSeriesBySeason(seasonId: string) {
+  try {
+    const result = await cookieBasedClient.models.Series.list({
+      authMode: "userPool",
+    })
+    const filteredSeries = result.data.filter((series) => series.seasonId === seasonId)
+
+    // For each series, get tournament count
+    const seriesWithDetails = await Promise.all(
+      filteredSeries.map(async (series) => {
+        // Get tournaments for this series
+        const tournamentsResult = await cookieBasedClient.models.Tournament.list({
+          filter: { seriesId: { eq: series.id } },
+          authMode: "userPool",
+        })
+
+        return {
+          ...series,
+          tournaments: tournamentsResult.data || [],
+        }
+      }),
+    )
+
+    return { success: true, data: seriesWithDetails }
+  } catch (error) {
+    console.error("Error fetching series by season:", error)
+    return { success: false, error: "Failed to fetch series" }
+  }
+}
+
 export async function getSeriesById(id: string) {
   try {
     const result = await cookieBasedClient.models.Series.get({ id }, { authMode: "userPool" })
@@ -229,6 +259,7 @@ export async function createSeries(formData: FormData) {
     }
 
     revalidatePath("/series")
+    revalidatePath(`/seasons/${seasonId}`)
     return { success: true, data: result.data }
   } catch (error) {
     console.error("Error creating series:", error)
