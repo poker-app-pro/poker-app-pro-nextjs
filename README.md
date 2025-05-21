@@ -1,5 +1,38 @@
 # Poker League Tracker
 
+---
+
+## Example League Structure
+
+```txt
+League - Osea's
+    Season - 2/3 Months of Collective Play
+        Series - Sunday Early Game
+            Result - Game week 1
+                   - x Cons Games (100, 50, 25)
+                   - x bounties (x50)
+            Result - Game week 2
+                   - x Cons Games (100, 50, 25)
+                   - x bounties (x50)
+        Series - Sunday Late Game
+            Result - Game week 1
+                   - x Cons Games (100, 50, 25)
+                   - x bounties (x50)
+            Result - Game week 2
+                   - x Cons Games (100, 50, 25)
+                   - x bounties (x50)
+        Final Event (Winner takes all golden ticket)
+            - Results (display the following)
+              - Top 8 in the main game
+              - Cons games for points to pre-seed next season
+                (all cons games score this way)
+                - 1st 100
+                - 2nd 50
+                - 3rd 25
+```
+
+---
+
 These use cases cover the major functionalities of the system, from league creation and management to tournament scoring and player qualification for the final event. The system’s role-based access ensures that admins, organizers, and players have appropriate permissions to perform specific tasks, while also enabling detailed tracking and reporting of results.
 
 ### **1. League Management (Admin Only)**
@@ -76,4 +109,4 @@ These use cases cover the major functionalities of the system, from league creat
 ### **14. League and Tournament History (System)**
    - **View League History**: Admins and organizers can view the historical performance of leagues, including past seasons, series, and tournaments.
    - **Track Player Historical Performance**: Players can view their historical performance across tournaments and series, including total points and final event results.
-### Poker League Management System - Completed Checklist
+
