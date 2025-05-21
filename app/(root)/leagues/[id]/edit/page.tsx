@@ -13,7 +13,7 @@ export default function EditLeaguePage() {
   const params = useParams()
   const router = useRouter()
   const leagueId = params.id as string
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [league, setLeague] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

@@ -3,10 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation"; 
 import {
-  Star,
-  Calendar,
-  Trophy,
-  BarChart2,
+  Star, 
+  Trophy, 
   ArrowLeft,
   Plus,
   Edit,
@@ -31,8 +29,11 @@ export default function SeriesDetailsPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [series, setSeries] = useState<any>(null);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [tournaments, setTournaments] = useState<any[]>([]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [standings, setStandings] = useState<any[]>([]);
   const [seasonName, setSeasonName] = useState("");
   const [leagueName, setLeagueName] = useState("");
@@ -53,6 +54,7 @@ export default function SeriesDetailsPage() {
 
         // Find the specific series
         const seriesData = seriesResult?.data?.find(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (s: any) => s.id === seriesId
         );
         if (!seriesData) {
@@ -71,6 +73,7 @@ export default function SeriesDetailsPage() {
 
         // Sort tournaments by date (newest first)
         const sortedTournaments = tournamentsResult?.data?.sort(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (a: any, b: any) =>
             new Date(b.date).getTime() - new Date(a.date).getTime()
         );
@@ -136,11 +139,13 @@ export default function SeriesDetailsPage() {
     }
 
     const completedTournaments = tournaments.filter(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (t: any) => t.status === "Completed" || t.isFinalized
     ).length;
 
     // Calculate total unique players
     const playerSet = new Set();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tournaments.forEach((tournament: any) => {
       if (tournament.tournamentPlayers) {
         tournament.tournamentPlayers.forEach((playerId: string) => {
@@ -422,11 +427,4 @@ export default function SeriesDetailsPage() {
       )}
     </>
   );
-}
-
-function getOrdinalSuffix(n: number) {
-  if (n === 0) return "";
-  const s = ["th", "st", "nd", "rd"];
-  const v = n % 100;
-  return s[(v - 20) % 10] || s[v] || s[0];
-}
+} 

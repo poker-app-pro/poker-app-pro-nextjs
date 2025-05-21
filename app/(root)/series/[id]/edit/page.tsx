@@ -34,10 +34,15 @@ export default function EditSeriesPage() {
   const [customPointsConfig, setCustomPointsConfig] = useState("")
 
   // Data
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [leagues, setLeagues] = useState<any[]>([])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [seasons, setSeasons] = useState<any[]>([])
-  const [filteredSeasons, setFilteredSeasons] = useState<any[]>([])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [ , setFilteredSeasons] = useState<any[]>([])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedSeason, setSelectedSeason] = useState<any | null>(null)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [series, setSeries] = useState<any | null>(null)
 
   // Validation errors

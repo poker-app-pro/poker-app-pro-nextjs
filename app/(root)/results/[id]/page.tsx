@@ -26,7 +26,7 @@ export default function TournamentResultDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [tournament, setTournament] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -165,7 +165,9 @@ export default function TournamentResultDetailsPage() {
               </tr>
             </thead>
             <tbody>
-              {tournament.results.map((result: any) => (
+              {tournament.results.map(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (result: any) => (
                 <tr
                   key={result.id}
                   className={result.position === 1 ? "bg-primary-50" : ""}

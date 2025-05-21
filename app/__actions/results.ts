@@ -35,9 +35,11 @@ export async function saveGameResults(formData: FormData) {
     const rankingsJson = formData.get("rankings") as string
     const bountiesJson = formData.get("bounties") as string
     const consolationJson = formData.get("consolation") as string
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rankings = JSON.parse(rankingsJson) as any[]
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const bounties = JSON.parse(bountiesJson) as any[]
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const consolation = JSON.parse(consolationJson) as any[]
 
     // Validate total players is at least equal to the number of ranked players
@@ -643,8 +645,7 @@ export async function updateTournamentResult(id: string, formData: FormData) {
     const gameTime = formData.get("gameTime") as string
     const location = formData.get("location") as string
     const buyIn = Number.parseFloat(formData.get("buyIn") as string) || 0
-    const prizePool = Number.parseFloat(formData.get("prizePool") as string) || 0
-
+ 
     // Validate required fields
     if (!name.trim()) {
       return { success: false, error: "Tournament name is required" }

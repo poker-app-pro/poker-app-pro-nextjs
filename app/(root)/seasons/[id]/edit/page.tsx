@@ -24,12 +24,13 @@ export default function EditSeasonPage() {
 
   // Form fields
   const [name, setName] = useState("");
-  const [leagueId, setLeagueId] = useState("");
+  const [ , setLeagueId] = useState("");
   const [leagueName, setLeagueName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [season, setSeason] = useState<any | null>(null);
 
   // Validation errors

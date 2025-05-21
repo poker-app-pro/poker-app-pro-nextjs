@@ -5,8 +5,7 @@ import { useParams, useRouter } from "next/navigation";
  import {
   Calendar,
   Star,
-  Trophy,
-  BarChart2,
+  Trophy, 
   ArrowLeft,
   Plus,
   Edit,
@@ -27,7 +26,9 @@ export default function SeasonDetailsPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [season, setSeason] = useState<any>(null);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [series, setSeries] = useState<any[]>([]);
   const [leagueName, setLeagueName] = useState("");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -82,6 +83,7 @@ export default function SeasonDetailsPage() {
     }
 
     const totalSeries = series.length;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const activeSeries = series.filter((s: any) => s.isActive).length;
 
     // Calculate total tournaments
@@ -384,11 +386,14 @@ export default function SeasonDetailsPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {series.map((seriesItem: any) => {
+                {series.map(
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (seriesItem: any) => {
                   // Calculate progress for each series
                   const totalTournaments = seriesItem.tournaments?.length || 0;
                   const completedTournaments =
                     seriesItem.tournaments?.filter(
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       (t: any) => t.status === "Completed" || t.isFinalized
                     ).length || 0;
                   const progress =

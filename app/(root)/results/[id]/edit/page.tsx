@@ -13,7 +13,7 @@ export default function EditTournamentResultPage() {
   const params = useParams()
   const router = useRouter()
   const tournamentId = params.id as string
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [tournament, setTournament] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

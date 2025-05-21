@@ -13,7 +13,7 @@ export default function LeagueDetailsPage() {
   const params = useParams()
   const router = useRouter()
   const leagueId = params.id as string
-
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [leagueDetails, setLeagueDetails] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -96,7 +96,7 @@ export default function LeagueDetailsPage() {
     return notFound()
   }
 
-  const { league, stats } = leagueDetails
+  const { league,   } = leagueDetails
 
   return (
     <>
