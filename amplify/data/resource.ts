@@ -78,7 +78,7 @@ const schema = a.schema({
       seasonId: a.string().required(),
       leagueId: a.string().required(),
       userId: a.string().required(),
-      date: a.date().required(),
+      date: a.string().required(),
       startTime: a.string(),
       endTime: a.string(),
       location: a.string(),
