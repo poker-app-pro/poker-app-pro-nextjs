@@ -3,30 +3,29 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Breadcrumb } from "@/components/ui/breadcrumb"
-import { Calendar, Loader2, AlertCircle, HelpCircle } from "lucide-react"
+import { useParams, useRouter } from "next/navigation"
+ import { Breadcrumb } from "@/components/ui/breadcrumb"
+import { Star, Loader2, AlertCircle, HelpCircle, ArrowLeft } from "lucide-react"
+import Link from "next/link"
 import { client } from "@/components/AmplifyClient"
 import { getCurrentUser } from "aws-amplify/auth"
-import { createSeason } from "@/app/__actions/seasons"
 import { FormSubmissionState, type FormSubmissionState as FormState } from "@/components/ui/form-submission-state"
 
 type PointsSystem = "weighted" | "custom"
 
-interface League {
-  id: string
-  name: string
-}
-
-export default function CreateSeasonPage() {
+export default function EditSeriesPage() {
+  const params = useParams()
   const router = useRouter()
+  const seriesId = params.id as string
 
   const [state, setState] = useState<FormState>("idle")
   const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
 
   // Form fields
   const [name, setName] = useState("")
   const [leagueId, setLeagueId] = useState("")
+  const [seasonId, setSeasonId] = useState("")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [description, setDescription] = useState("")
@@ -34,60 +33,128 @@ export default function CreateSeasonPage() {
   const [pointsSystem, setPointsSystem] = useState<PointsSystem>("weighted")
   const [customPointsConfig, setCustomPointsConfig] = useState("")
 
-  // Data fetching
-  const [leagues, setLeagues] = useState<League[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  // Data
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [leagues, setLeagues] = useState<any[]>([])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [seasons, setSeasons] = useState<any[]>([])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [ , setFilteredSeasons] = useState<any[]>([])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [selectedSeason, setSelectedSeason] = useState<any | null>(null)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [series, setSeries] = useState<any | null>(null)
 
   // Validation errors
   const [nameError, setNameError] = useState("")
-  const [leagueError, setLeagueError] = useState("")
   const [startDateError, setStartDateError] = useState("")
   const [endDateError, setEndDateError] = useState("")
   const [customPointsError, setCustomPointsError] = useState("")
 
-  // Fetch leagues
+  // Fetch series data and related entities
   useEffect(() => {
-    async function fetchLeagues() {
+    async function fetchData() {
       try {
+        setIsLoading(true)
+
+        // Fetch series data
+        const seriesResult = await client.models.Series.get({ id: seriesId }, { authMode: "userPool" })
+
+        if (!seriesResult.data) {
+          throw new Error("Series not found")
+        }
+
+        const seriesData = seriesResult.data
+        setSeries(seriesData)
+
+        // Set form fields
+        setName(seriesData.name)
+        setLeagueId(seriesData.leagueId)
+        setSeasonId(seriesData.seasonId)
+        setStartDate(seriesData.startDate ? seriesData.startDate.split("T")[0] : "")
+        setEndDate(seriesData.endDate ? seriesData.endDate.split("T")[0] : "")
+        setDescription(seriesData.description || "")
+        setIsActive(seriesData.isActive !== undefined ? (seriesData.isActive as boolean) : true)
+        setPointsSystem((seriesData.pointsSystem as PointsSystem) || "weighted")
+
+        if (seriesData.customPointsConfig && seriesData.pointsSystem === "custom") {
+          setCustomPointsConfig(JSON.stringify(seriesData.customPointsConfig, null, 2))
+        }
+
+        // Fetch leagues
         const leaguesResult = await client.models.League.list({
           authMode: "userPool",
           filter: { isActive: { eq: true } },
-          selectionSet: ["id", "name"],
         })
 
         if (leaguesResult.data) {
           setLeagues(leaguesResult.data)
         }
+
+        // Fetch seasons
+        const seasonsResult = await client.models.Season.list({
+          authMode: "userPool",
+          filter: { isActive: { eq: true } },
+        })
+
+        if (seasonsResult.data) {
+          setSeasons(seasonsResult.data)
+
+          // Filter seasons by league
+          const filtered = seasonsResult.data.filter((season) => season.leagueId === seriesData.leagueId)
+          setFilteredSeasons(filtered)
+
+          // Set selected season
+          const season = seasonsResult.data.find((s) => s.id === seriesData.seasonId)
+          setSelectedSeason(season || null)
+        }
       } catch (error) {
-        console.error("Error fetching leagues:", error)
-        setError("Failed to load leagues")
+        console.error("Error fetching series data:", error)
+        setError("Failed to load series data")
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchLeagues()
-  }, [])
+    if (seriesId) {
+      fetchData()
+    }
+  }, [seriesId])
+
+  // Filter seasons when league changes
+  useEffect(() => {
+    if (leagueId && seasons.length > 0) {
+      const filtered = seasons.filter((season) => season.leagueId === leagueId)
+      setFilteredSeasons(filtered)
+
+      // Clear selected season if it's not in the filtered list
+      if (seasonId && !filtered.some((s) => s.id === seasonId)) {
+        setSeasonId("")
+        setSelectedSeason(null)
+      }
+    }
+  }, [leagueId, seasons, seasonId])
+
+  // Update selected season when season changes
+  useEffect(() => {
+    if (seasonId && seasons.length > 0) {
+      const season = seasons.find((s) => s.id === seasonId) || null
+      setSelectedSeason(season)
+    }
+  }, [seasonId, seasons])
 
   const validateForm = (): boolean => {
     let isValid = true
 
     // Reset errors
     setNameError("")
-    setLeagueError("")
     setStartDateError("")
     setEndDateError("")
     setCustomPointsError("")
 
     // Validate name
     if (!name.trim()) {
-      setNameError("Season name is required")
-      isValid = false
-    }
-
-    // Validate league
-    if (!leagueId) {
-      setLeagueError("Please select a league")
+      setNameError("Series name is required")
       isValid = false
     }
 
@@ -135,41 +202,70 @@ export default function CreateSeasonPage() {
     try {
       const user = await getCurrentUser()
 
-      // Create form data
-      const formData = new FormData()
-      formData.append("name", name)
-      formData.append("leagueId", leagueId)
-      formData.append("startDate", startDate)
-      if (endDate) formData.append("endDate", endDate)
-      if (description) formData.append("description", description)
-      if (isActive) formData.append("isActive", "on")
-      formData.append("pointsSystem", pointsSystem)
-      if (pointsSystem === "custom" && customPointsConfig) {
-        formData.append("customPointsConfig", customPointsConfig)
+      // Update the series
+      const result = await client.models.Series.update(
+        {
+          id: seriesId,
+          name,
+          startDate: startDate,
+          endDate: endDate || undefined,
+          description,
+          isActive,
+          pointsSystem,
+          customPointsConfig:
+            pointsSystem === "custom" && customPointsConfig ? JSON.parse(customPointsConfig) : undefined,
+        },
+        {
+          authMode: "userPool",
+        },
+      )
+
+      if (!result.data) {
+        throw new Error("Failed to update series")
       }
-      formData.append("userId", user.userId)
 
-      // Call server action
-      const result = await createSeason(formData)
-
-      if (result.success) {
-        setState("success")
-
-        // Redirect to seasons page
-        setTimeout(() => {
-          router.push("/seasons")
-        }, 1500)
-      } else {
-        throw new Error(result.error || "Failed to create season")
+      // Log activity
+      try {
+        await client.models.ActivityLog.create(
+          {
+            userId: user.userId,
+            action: "UPDATE",
+            entityType: "Series",
+            entityId: seriesId,
+            details: {
+              name,
+              seasonId,
+              leagueId,
+            },
+            timestamp: new Date().toISOString(),
+          },
+          {
+            authMode: "userPool",
+          },
+        )
+      } catch (logError) {
+        console.error("Error logging activity:", logError)
+        // Continue execution even if logging fails
       }
+
+      setState("success")
+
+      // Redirect back to series details page
+      setTimeout(() => {
+        router.push(`/series/${seriesId}`)
+      }, 1500)
     } catch (err) {
-      console.error(err)
+      console.error("Error updating series:", err)
       setState("error")
-      setError("An error occurred while creating the season. Please try again.")
+      setError("An error occurred while updating the series. Please try again.")
     }
   }
 
-  const breadcrumbItems = [{ label: "Seasons", href: "/seasons" }, { label: "Create Season" }]
+  const breadcrumbItems = [
+    { label: "Series", href: "/series" },
+    { label: series?.name || "Series Details", href: `/series/${seriesId}` },
+    { label: "Edit" },
+  ]
 
   return (
     <>
@@ -178,12 +274,12 @@ export default function CreateSeasonPage() {
         {/* Form Submission State Overlay */}
         <FormSubmissionState
           state={state}
-          title="Season"
-          icon={<Calendar className="h-8 w-8 text-green-600" />}
-          successTitle="Season Created Successfully!"
-          successMessage="Your new season has been created."
+          title="Series"
+          icon={<Star className="h-8 w-8 text-green-600" />}
+          successTitle="Series Updated Successfully!"
+          successMessage="Your series has been updated."
           errorMessage={error}
-          redirectMessage="Redirecting to seasons page..."
+          redirectMessage="Redirecting to series details..."
         />
 
         {isLoading ? (
@@ -193,11 +289,19 @@ export default function CreateSeasonPage() {
         ) : (
           <div className="material-card">
             <div className="material-card-header">
+              <div className="flex items-center gap-2 mb-2">
+                <Link href={`/series/${seriesId}`}>
+                  <button className="material-button-secondary flex items-center gap-1 text-sm py-1">
+                    <ArrowLeft className="h-4 w-4" />
+                    Back
+                  </button>
+                </Link>
+              </div>
               <h2 className="material-card-title flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                Create New Season
+                <Star className="h-5 w-5 text-primary" />
+                Edit Series
               </h2>
-              <p className="material-card-subtitle">Seasons organize series and tournaments over a period of time</p>
+              <p className="material-card-subtitle">Update series details</p>
             </div>
 
             <form onSubmit={handleSubmit} className="material-card-content space-y-6">
@@ -209,29 +313,8 @@ export default function CreateSeasonPage() {
               )}
 
               <div>
-                <label htmlFor="league" className="material-label">
-                  League*
-                </label>
-                <select
-                  id="league"
-                  value={leagueId}
-                  onChange={(e) => setLeagueId(e.target.value)}
-                  className={`material-input ${leagueError ? "border-destructive" : ""}`}
-                  disabled={state === "submitting"}
-                >
-                  <option value="">Select a league</option>
-                  {leagues.map((league) => (
-                    <option key={league.id} value={league.id}>
-                      {league.name}
-                    </option>
-                  ))}
-                </select>
-                {leagueError && <p className="text-destructive text-xs mt-1">{leagueError}</p>}
-              </div>
-
-              <div>
                 <label htmlFor="name" className="material-label">
-                  Season Name*
+                  Series Name*
                 </label>
                 <input
                   id="name"
@@ -239,10 +322,38 @@ export default function CreateSeasonPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className={`material-input ${nameError ? "border-destructive" : ""}`}
-                  placeholder="e.g., Summer 2024"
+                  placeholder="e.g., Beginner Series"
                   disabled={state === "submitting"}
                 />
                 {nameError && <p className="text-destructive text-xs mt-1">{nameError}</p>}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="league" className="material-label">
+                    League
+                  </label>
+                  <input
+                    type="text"
+                    value={leagues.find((l) => l.id === leagueId)?.name || ""}
+                    className="material-input"
+                    disabled
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">League cannot be changed</p>
+                </div>
+
+                <div>
+                  <label htmlFor="season" className="material-label">
+                    Season
+                  </label>
+                  <input
+                    type="text"
+                    value={seasons.find((s) => s.id === seasonId)?.name || ""}
+                    className="material-input"
+                    disabled
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Season cannot be changed</p>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -258,7 +369,15 @@ export default function CreateSeasonPage() {
                     className={`material-input ${startDateError ? "border-destructive" : ""}`}
                     disabled={state === "submitting"}
                   />
-                  {startDateError && <p className="text-destructive text-xs mt-1">{startDateError}</p>}
+                  {startDateError ? (
+                    <p className="text-destructive text-xs mt-1">{startDateError}</p>
+                  ) : (
+                    selectedSeason?.startDate && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Season starts: {new Date(selectedSeason.startDate).toLocaleDateString()}
+                      </p>
+                    )
+                  )}
                 </div>
 
                 <div>
@@ -276,7 +395,12 @@ export default function CreateSeasonPage() {
                   {endDateError ? (
                     <p className="text-destructive text-xs mt-1">{endDateError}</p>
                   ) : (
-                    <p className="text-xs text-muted-foreground mt-1">Leave blank for ongoing season</p>
+                    <p className="text-xs text-muted-foreground mt-1">Leave blank for ongoing series</p>
+                  )}
+                  {selectedSeason?.endDate && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Season ends: {new Date(selectedSeason.endDate).toLocaleDateString()}
+                    </p>
                   )}
                 </div>
               </div>
@@ -290,7 +414,7 @@ export default function CreateSeasonPage() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="material-input min-h-[100px]"
-                  placeholder="Describe this season..."
+                  placeholder="Describe this series..."
                   disabled={state === "submitting"}
                 />
               </div>
@@ -321,6 +445,9 @@ export default function CreateSeasonPage() {
                   <option value="weighted">Weighted</option>
                   <option value="custom">Custom</option>
                 </select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  <strong>Note:</strong> Changing the points system will only affect future tournaments.
+                </p>
               </div>
 
               {pointsSystem === "custom" && (
@@ -332,7 +459,9 @@ export default function CreateSeasonPage() {
                     id="customPointsConfig"
                     value={customPointsConfig}
                     onChange={(e) => setCustomPointsConfig(e.target.value)}
-                    className={`material-input min-h-[100px] font-mono text-sm ${customPointsError ? "border-destructive" : ""}`}
+                    className={`material-input min-h-[100px] font-mono text-sm ${
+                      customPointsError ? "border-destructive" : ""
+                    }`}
                     placeholder='{"1": 100, "2": 90, "3": 80, "4": 70, "5": 60}'
                     disabled={state === "submitting"}
                   />
@@ -353,19 +482,16 @@ export default function CreateSeasonPage() {
                   disabled={state === "submitting"}
                 />
                 <label htmlFor="isActive" className="ml-2 text-sm text-foreground">
-                  Season is active
+                  Series is active
                 </label>
               </div>
 
               <div className="flex justify-end gap-4 pt-4">
-                <button
-                  type="button"
-                  onClick={() => router.push("/seasons")}
-                  className="material-button-secondary"
-                  disabled={state === "submitting"}
-                >
-                  Cancel
-                </button>
+                <Link href={`/series/${seriesId}`}>
+                  <button type="button" className="material-button-secondary" disabled={state === "submitting"}>
+                    Cancel
+                  </button>
+                </Link>
                 <button
                   type="submit"
                   className="material-button-primary bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
@@ -374,10 +500,10 @@ export default function CreateSeasonPage() {
                   {state === "submitting" ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Creating...
+                      Updating...
                     </>
                   ) : (
-                    "Create Season"
+                    "Update Series"
                   )}
                 </button>
               </div>

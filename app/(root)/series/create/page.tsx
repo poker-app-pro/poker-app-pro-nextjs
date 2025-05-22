@@ -10,8 +10,7 @@ import { useHierarchy } from "@/contexts/hierarchy-context"
 import { client } from "@/components/AmplifyClient"
 import { getCurrentUser } from "aws-amplify/auth"
 import { createSeries } from "@/app/__actions/series"
-
-type FormState = "idle" | "submitting" | "success" | "error"
+import { FormSubmissionState, type FormSubmissionState as FormState } from "@/components/ui/form-submission-state"
 
 interface League {
   id: string
@@ -254,7 +253,7 @@ export default function CreateSeriesPage() {
         // Redirect to series page
         setTimeout(() => {
           router.push("/series")
-        }, 1000)
+        }, 1500)
       } else {
         throw new Error(result.error || "Failed to create series")
       }
@@ -271,12 +270,16 @@ export default function CreateSeriesPage() {
     <>
       <Breadcrumb items={breadcrumbItems} />
       <div className="max-w-3xl mx-auto">
-        {state === "error" && (
-          <div className="bg-destructive/10 text-destructive p-4 rounded-md mb-6 flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            <p>{error}</p>
-          </div>
-        )}
+        {/* Form Submission State Overlay */}
+        <FormSubmissionState
+          state={state}
+          title="Series"
+          icon={<Star className="h-8 w-8 text-green-600" />}
+          successTitle="Series Created Successfully!"
+          successMessage="Your new series has been created."
+          errorMessage={error}
+          redirectMessage="Redirecting to series page..."
+        />
 
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
@@ -293,6 +296,13 @@ export default function CreateSeriesPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="material-card-content space-y-6">
+              {state === "error" && (
+                <div className="bg-destructive/10 text-destructive p-4 rounded-md mb-6 flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5" />
+                  <p>{error}</p>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="league" className="material-label">

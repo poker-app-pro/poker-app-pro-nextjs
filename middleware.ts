@@ -43,6 +43,10 @@ export async function middleware(request: NextRequest) {
       return response;
     }
 
+    if (authenticated && pathname === "/") {
+      return NextResponse.redirect(new URL("/results", request.url));
+    }
+
     if (authenticated) {
       return response;
     }
