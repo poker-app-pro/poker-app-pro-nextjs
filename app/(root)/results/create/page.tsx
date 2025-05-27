@@ -38,6 +38,7 @@ export default function CreateTournamentPage() {
   // Form fields
   const [seriesId, setSeriesId] = useState("")
   const [totalPlayers, setTotalPlayers] = useState<number>(0)
+  const [gameType, setGameType] = useState<"Tournament" | "Consolation">("Tournament")
   const [gameTime, setGameTime] = useState<string>(() => {
     const now = new Date()
     return `${now.toISOString().split("T")[0]}T${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`
@@ -240,6 +241,7 @@ export default function CreateTournamentPage() {
       formData.append("seriesId", seriesId)
       formData.append("totalPlayers", totalPlayers.toString())
       formData.append("gameTime", gameTime)
+      formData.append("gameType", gameType)
 
       // Add player rankings with positions and points
       const rankings = rankingPlayers.map((player, index) => ({
@@ -332,7 +334,7 @@ export default function CreateTournamentPage() {
               {seriesError && <p className="text-destructive text-xs mt-1">{seriesError}</p>}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label htmlFor="totalPlayers" className="material-label">
                   Total Players*
@@ -353,6 +355,27 @@ export default function CreateTournamentPage() {
                     Must be at least equal to the number of ranked players ({rankingPlayers.length})
                   </p>
                 )}
+              </div>
+
+              <div>
+                <label htmlFor="gameType" className="material-label">
+                  Game Type*
+                </label>
+                <select
+                  id="gameType"
+                  value={gameType}
+                  onChange={(e) => setGameType(e.target.value as "Tournament" | "Consolation")}
+                  className="material-input"
+                  disabled={state === "submitting"}
+                >
+                  <option value="Tournament">Tournament</option>
+                  <option value="Consolation">Consolation</option>
+                </select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {gameType === "Tournament" 
+                    ? "Top 10 players get points: players × (11 - rank)" 
+                    : "Top 3 players get fixed points: 100, 50, 25"}
+                </p>
               </div>
 
               <div>
@@ -436,47 +459,6 @@ export default function CreateTournamentPage() {
               </div>
             </div>
 
-            {/* Consolation Games Section */}
-            <div className="border border-gray-200 rounded-md p-4">
-              <label className="material-label flex items-center gap-2 mb-4">
-                <Users className="h-4 w-4" />
-                Consolation Games
-              </label>
-
-              <div className="space-y-4">
-                <PlayerAutoSuggest
-                  onSelect={(player) => handleAddPlayer(player, "consolation")}
-                  existingPlayers={getAvailablePlayersForSection("consolation")}
-                  placeholder="Search players to add to consolation games"
-                  helperText="Players from both rankings and available players can be added"
-                />
-
-                <div className="space-y-2">
-                  {consolationPlayers.length === 0 ? (
-                    <div className="text-center py-4 border border-dashed border-gray-200 rounded-md">
-                      <p className="text-muted-foreground">No consolation players added yet</p>
-                    </div>
-                  ) : (
-                    consolationPlayers.map((player) => (
-                      <div
-                        key={player.id}
-                        className="flex items-center justify-between bg-white border border-gray-200 rounded-md p-3"
-                      >
-                        <span>{player.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemovePlayer(player, "consolation")}
-                          className="text-muted-foreground hover:text-destructive transition-colors"
-                          disabled={state === "submitting"}
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
 
             <div className="flex justify-end gap-4 pt-4">
               <button
