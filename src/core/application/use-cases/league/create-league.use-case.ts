@@ -1,6 +1,6 @@
-import { LeagueRepository } from '../../domain/repositories/league.repository';
-import { CreateLeagueRequest, LeagueEntity, LeagueCreatedEvent } from '../../domain/entities/league.entity';
-import { DomainEventPublisher, ActivityLogService, ValidationService } from '../../domain/services/domain-event.service';
+import { LeagueRepository } from '@/src/core/domain/repositories/league.repository';
+import { CreateLeagueRequest, LeagueEntity, LeagueCreatedEvent } from '@/src/core/domain/entities/league.entity';
+import { DomainEventPublisher, ActivityLogService, ValidationService } from '@/src/core/domain/services/domain-event.service';
 
 export interface CreateLeagueUseCase {
   execute(request: CreateLeagueRequest): Promise<CreateLeagueResult>;
@@ -57,6 +57,13 @@ export class CreateLeagueUseCaseImpl implements CreateLeagueUseCase {
       // Publish domain event
       const event: LeagueCreatedEvent = {
         type: 'LeagueCreated',
+        aggregateId: league.id,
+        occurredOn: new Date(),
+        eventData: {
+          leagueId: league.id,
+          userId: request.userId,
+          name: request.name
+        },
         leagueId: league.id,
         userId: request.userId,
         name: request.name,

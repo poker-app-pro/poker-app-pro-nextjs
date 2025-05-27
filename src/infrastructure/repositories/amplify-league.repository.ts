@@ -1,9 +1,9 @@
-import { LeagueRepository } from '../../core/domain/repositories/league.repository';
-import { LeagueEntity, CreateLeagueRequest, UpdateLeagueRequest } from '../../core/domain/entities/league.entity';
+import { LeagueRepository } from '@/src/core/domain/repositories/league.repository';
+import { LeagueEntity, CreateLeagueRequest, UpdateLeagueRequest } from '@/src/core/domain/entities/league.entity';
 import { 
   AmplifyDataClient, 
   AmplifyLeagueData 
-} from '../types/amplify.types';
+} from '@/src/infrastructure/types/amplify.types';
 
 export class AmplifyLeagueRepository implements LeagueRepository {
   constructor(private readonly client: AmplifyDataClient) {}

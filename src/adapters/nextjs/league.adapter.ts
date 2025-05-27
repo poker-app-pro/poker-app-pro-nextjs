@@ -1,8 +1,8 @@
 // Next.js Framework Adapter for League functionality
 // This layer isolates Next.js specific code and provides clean interfaces to the core
 
-import { getContainer } from '../../infrastructure/di/container';
-import { CreateLeagueRequest } from '../../core/domain/entities/league.entity';
+import { getContainer } from '@/src/infrastructure/di/container';
+import { CreateLeagueRequest } from '@/src/core/domain/entities/league.entity';
 
 // Framework-agnostic result types
 export interface LeagueActionResult {
@@ -95,13 +95,13 @@ export class NextJSFormUtils {
   static extractFormData(formData: FormData): Record<string, unknown> {
     const data: Record<string, unknown> = {};
     
-    for (const [key, value] of formData.entries()) {
+    formData.forEach((value, key) => {
       if (typeof value === 'string') {
         data[key] = value.trim();
       } else {
         data[key] = value;
       }
-    }
+    });
     
     return data;
   }

@@ -5,8 +5,8 @@ import {
   ActivityLogService,
   ValidationService,
   ValidationResult
-} from '../../core/domain/services/domain-event.service';
-import { AmplifyActivityLogClient } from '../types/amplify.types';
+} from '@/src/core/domain/services/domain-event.service';
+import { AmplifyActivityLogClient } from '@/src/infrastructure/types/amplify.types';
 
 export class InMemoryDomainEventPublisher implements DomainEventPublisher {
   private handlers = new Map<string, DomainEventHandler<DomainEvent>[]>();

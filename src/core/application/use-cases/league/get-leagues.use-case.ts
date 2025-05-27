@@ -1,5 +1,5 @@
-import { LeagueRepository } from '../../domain/repositories/league.repository';
-import { LeagueEntity } from '../../domain/entities/league.entity';
+import { LeagueRepository } from '@/src/core/domain/repositories/league.repository';
+import { LeagueEntity } from '@/src/core/domain/entities/league.entity';
 
 export interface GetLeaguesUseCase {
   execute(request: GetLeaguesRequest): Promise<GetLeaguesResult>;

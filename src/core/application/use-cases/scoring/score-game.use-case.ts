@@ -1,8 +1,8 @@
 // Application Layer - Score Game Use Case
-import type { GameResult } from "../../../domain/entities/game-result.entity"
-import { GameType } from "../../../domain/entities/game-result.entity"
-import type { ScoringStrategy } from "../../../domain/services/scoring-strategy.service"
-import { TournamentScoringStrategy, ConsolationScoringStrategy } from "../../../domain/services/scoring-strategy.service"
+import type { GameResult } from "@/src/core/domain/entities/game-result.entity"
+import { GameType } from "@/src/core/domain/entities/game-result.entity"
+import type { ScoringStrategy } from "@/src/core/domain/services/scoring-strategy.service"
+import { TournamentScoringStrategy, ConsolationScoringStrategy } from "@/src/core/domain/services/scoring-strategy.service"
 
 export class ScoreGameUseCase {
   private strategies: Map<GameType, ScoringStrategy>

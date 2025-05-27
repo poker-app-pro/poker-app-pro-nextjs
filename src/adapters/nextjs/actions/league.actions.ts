@@ -1,9 +1,9 @@
 "use server"
 
 import { revalidatePath } from "next/cache";
-import { NextJSLeagueAdapter } from '../league.adapter';
-import { ensureAmplifyInitialized } from '../amplify-client.adapter';
-import amplifyConfig from "../../../../amplify_outputs.json";
+import { NextJSLeagueAdapter } from '@/src/adapters/nextjs/league.adapter';
+import { ensureAmplifyInitialized } from '@/src/adapters/nextjs/amplify-client.adapter';
+import amplifyConfig from "@/amplify_outputs.json";
 
 // Initialize Amplify before any operations
 ensureAmplifyInitialized({ config: amplifyConfig });
@@ -58,7 +58,7 @@ export async function updateLeague(id: string, formData: FormData) {
 
     // This is a simplified implementation - in a full refactor, 
     // we'd create an UpdateLeagueUseCase
-    const container = await import('../../../infrastructure/di/container').then(m => m.getContainer());
+    const container = await import('@/src/infrastructure/di/container').then(m => m.getContainer());
     const leagueRepository = container.getLeagueRepository();
     
     const updatedLeague = await leagueRepository.update({
@@ -93,7 +93,7 @@ export async function deleteLeague(id: string, userId: string) {
   try {
     // This is a simplified implementation - in a full refactor, 
     // we'd create a DeleteLeagueUseCase with proper business logic
-    const container = await import('../../../infrastructure/di/container').then(m => m.getContainer());
+    const container = await import('@/src/infrastructure/di/container').then(m => m.getContainer());
     const leagueRepository = container.getLeagueRepository();
     
     // Get the league first to check relationships

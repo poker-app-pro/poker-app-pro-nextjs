@@ -1,12 +1,12 @@
 "use client"
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../../../components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../components/ui/tabs"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Trophy, Plus, Users, Calendar } from "lucide-react"
-import { Button } from "../../../../components/ui/button"
+import { Button } from "@/components/ui/button"
 import Link from "next/link" 
-import { getLeagues } from "../actions/league.actions"
-import { LeagueEntity } from "../../../core/domain/entities/league.entity"
+import { getLeagues } from "@/src/adapters/nextjs/actions/league.actions"
+import { LeagueEntity } from "@/src/core/domain/entities/league.entity"
 
 interface LeaguesListProps {
   searchQuery?: string
@@ -24,7 +24,7 @@ const LeaguesList = ({ searchQuery = "" }: LeaguesListProps) => {
         const result = await getLeagues()
  
         if (result.success && result.data) {
-          setAllLeagues(result.data)
+          setAllLeagues(result.data as LeagueEntity[])
         } else {
           setError(result.error || "Failed to fetch leagues")
         }

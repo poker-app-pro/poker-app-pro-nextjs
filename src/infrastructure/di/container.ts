@@ -1,17 +1,17 @@
 // Dependency Injection Container
 // This isolates framework dependencies and provides clean interfaces
 
-import { LeagueRepository } from '../../core/domain/repositories/league.repository';
-import { CreateLeagueUseCase, CreateLeagueUseCaseImpl } from '../../core/application/use-cases/league/create-league.use-case';
-import { GetLeaguesUseCase, GetLeaguesUseCaseImpl } from '../../core/application/use-cases/league/get-leagues.use-case';
-import { DomainEventPublisher, ActivityLogService, ValidationService } from '../../core/domain/services/domain-event.service';
-import { AmplifyLeagueRepository } from '../repositories/amplify-league.repository';
+import { LeagueRepository } from '@/src/core/domain/repositories/league.repository';
+import { CreateLeagueUseCase, CreateLeagueUseCaseImpl } from '@/src/core/application/use-cases/league/create-league.use-case';
+import { GetLeaguesUseCase, GetLeaguesUseCaseImpl } from '@/src/core/application/use-cases/league/get-leagues.use-case';
+import { DomainEventPublisher, ActivityLogService, ValidationService } from '@/src/core/domain/services/domain-event.service';
+import { AmplifyLeagueRepository } from '@/src/infrastructure/repositories/amplify-league.repository';
 import { 
   InMemoryDomainEventPublisher, 
   AmplifyActivityLogService, 
   DefaultValidationService
-} from '../services/amplify-domain-event.service';
-import { AmplifyDataClient, AmplifyActivityLogClient } from '../types/amplify.types';
+} from '@/src/infrastructure/services/amplify-domain-event.service';
+import { AmplifyDataClient, AmplifyActivityLogClient } from '@/src/infrastructure/types/amplify.types';
 
 export interface Container {
   // Repositories

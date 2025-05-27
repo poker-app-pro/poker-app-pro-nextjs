@@ -1,4 +1,4 @@
-import { LeagueEntity, CreateLeagueRequest, UpdateLeagueRequest } from '../entities/league.entity';
+import { LeagueEntity, CreateLeagueRequest, UpdateLeagueRequest } from '@/src/core/domain/entities/league.entity';
 
 // Repository interface - part of domain layer
 export interface LeagueRepository {

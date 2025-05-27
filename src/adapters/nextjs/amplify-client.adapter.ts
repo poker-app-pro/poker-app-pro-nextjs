@@ -3,9 +3,9 @@
 
 import { generateServerClientUsingCookies } from "@aws-amplify/adapter-nextjs/api";
 import { cookies } from "next/headers";
-import { Schema } from "../../../amplify/data/resource";
-import { AmplifyDataClient, AmplifyActivityLogClient } from '../../infrastructure/types/amplify.types';
-import { initializeContainer } from '../../infrastructure/di/container';
+import { Schema } from "@/amplify/data/resource";
+import { AmplifyDataClient, AmplifyActivityLogClient } from '@/src/infrastructure/types/amplify.types';
+import { initializeContainer } from '@/src/infrastructure/di/container';
 
 // Amplify configuration interface
 export interface AmplifyConfig {

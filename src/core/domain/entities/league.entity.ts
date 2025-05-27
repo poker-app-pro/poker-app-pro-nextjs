@@ -35,6 +35,13 @@ export interface UpdateLeagueRequest {
 // Domain events
 export interface LeagueCreatedEvent {
   readonly type: 'LeagueCreated';
+  readonly aggregateId: string;
+  readonly occurredOn: Date;
+  readonly eventData: {
+    readonly leagueId: string;
+    readonly userId: string;
+    readonly name: string;
+  };
   readonly leagueId: string;
   readonly userId: string;
   readonly name: string;
@@ -43,6 +50,13 @@ export interface LeagueCreatedEvent {
 
 export interface LeagueUpdatedEvent {
   readonly type: 'LeagueUpdated';
+  readonly aggregateId: string;
+  readonly occurredOn: Date;
+  readonly eventData: {
+    readonly leagueId: string;
+    readonly userId: string;
+    readonly changes: Partial<UpdateLeagueRequest>;
+  };
   readonly leagueId: string;
   readonly userId: string;
   readonly changes: Partial<UpdateLeagueRequest>;
@@ -51,6 +65,12 @@ export interface LeagueUpdatedEvent {
 
 export interface LeagueDeletedEvent {
   readonly type: 'LeagueDeleted';
+  readonly aggregateId: string;
+  readonly occurredOn: Date;
+  readonly eventData: {
+    readonly leagueId: string;
+    readonly userId: string;
+  };
   readonly leagueId: string;
   readonly userId: string;
   readonly timestamp: Date;
