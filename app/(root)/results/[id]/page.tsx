@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Trophy,
@@ -35,24 +35,28 @@ export default function TournamentResultDetailsPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Fetch tournament data
-  useState(async () => {
-    try {
-      const result = await getTournamentResultDetails(id);
+  useEffect(() => {
+    async function fetchTournamentData() {
+      try {
+        const result = await getTournamentResultDetails(id);
 
-      if (!result) {
-        throw new Error("Tournament not found");
+        if (!result) {
+          throw new Error("Tournament not found");
+        }
+
+        setTournament(result);
+      } catch (err) {
+        console.error("Error fetching tournament details:", err);
+        setError(
+          err instanceof Error ? err.message : "An unexpected error occurred"
+        );
+      } finally {
+        setLoading(false);
       }
-
-      setTournament(result);
-    } catch (err) {
-      console.error("Error fetching tournament details:", err);
-      setError(
-        err instanceof Error ? err.message : "An unexpected error occurred"
-      );
-    } finally {
-      setLoading(false);
     }
-  });
+
+    fetchTournamentData();
+  }, [id]);
 
   async function handleDelete() {
     setIsDeleting(true);
