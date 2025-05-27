@@ -7,16 +7,8 @@ import {
 } from "@/lib/amplify-utils";
 import { getCurrentUser } from "aws-amplify/auth/server";
 import { cookies } from "next/headers";
- 
-function calculatePoints(position: number, totalPlayers: number): number {
-  // Only award points to the top 10 players
-  if (position > 10) {
-    return 0;
-  }
-
-  // Weighted scoring algorithm: points = total players * (11-rank)
-  return totalPlayers * (11 - position);
-}
+import { scoreGameUseCase } from "@/src/core/application/use-cases/scoring/score-game.use-case";
+import { GameType, type GameResult, type PlayerResult } from "@/src/core/domain/entities/game-result.entity";
 export async function saveGameResults(formData: FormData) {
   try {
     // Get current user
@@ -30,6 +22,7 @@ export async function saveGameResults(formData: FormData) {
     const seriesId = formData.get("seriesId") as string
     const totalPlayers = Number.parseInt(formData.get("totalPlayers") as string, 10)
     const gameTime = new Date(formData.get("gameTime") as string)
+    const gameType = (formData.get("gameType") as string) || GameType.Tournament
 
     // Parse player data
     const rankingsJson = formData.get("rankings") as string
@@ -144,8 +137,14 @@ export async function saveGameResults(formData: FormData) {
         playerData = playerResponse.data
       }
 
-      // Calculate points using the weighted algorithm
-      const points = calculatePoints(player.position, totalPlayers)
+      // Calculate points using the new scoring engine
+      const gameResult: GameResult = {
+        gameType: gameType as GameType,
+        totalPlayers,
+        results: [{ playerId, rank: player.position }]
+      }
+      const pointsMap = scoreGameUseCase.execute(gameResult)
+      const points = pointsMap.get(playerId) || 0
 
       // Create tournament player record
       const tournamentPlayerResponse = await cookieBasedClient.models.TournamentPlayer.create(
