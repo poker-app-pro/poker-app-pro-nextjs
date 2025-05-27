@@ -8,7 +8,7 @@ import {
 import { getCurrentUser } from "aws-amplify/auth/server";
 import { cookies } from "next/headers";
 import { scoreGameUseCase } from "@/src/core/application/use-cases/scoring/score-game.use-case";
-import { GameType, type GameResult, type PlayerResult } from "@/src/core/domain/entities/game-result.entity";
+import { GameType, type GameResult } from "@/src/core/domain/entities/game-result.entity";
 export async function saveGameResults(formData: FormData) {
   try {
     // Get current user

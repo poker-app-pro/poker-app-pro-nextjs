@@ -1,126 +1,23 @@
-// Amplify-specific type definitions to avoid using 'any'
+// Legacy Amplify types - DEPRECATED
+// Use types from amplify-clean.types.ts instead
+// This file is kept for backward compatibility during migration
 
-export interface AmplifyAuthOptions {
-  authMode: string;
-}
+// Re-export the new clean types for any remaining legacy imports
+export type {
+  CleanLeagueType as AmplifyLeagueData,
+  CleanAmplifyDataClient as AmplifyDataClient,
+  CleanAmplifyActivityLogClient as AmplifyActivityLogClient,
+  CreateLeagueInput as AmplifyLeagueCreateInput,
+  UpdateLeagueInput as AmplifyLeagueUpdateInput,
+  CreateLeagueSettingsInput as AmplifyLeagueSettingsInput,
+  CreateActivityLogInput as AmplifyActivityLogInput,
+  RequestOptions as AmplifyAuthOptions,
+  AmplifyDataResponse as AmplifyResponse,
+  AmplifyListDataResponse as AmplifyListResponse
+} from './amplify-clean.types';
 
-export interface AmplifyError {
-  message: string;
-  code?: string;
-}
-
-export interface AmplifyResponse<T> {
-  data: T | null;
-  errors?: AmplifyError[];
-}
-
-export interface AmplifyListResponse<T> {
-  data: T[];
-  errors?: AmplifyError[];
-}
-
-export interface AmplifyLeagueData {
-  id: string;
-  name: string;
-  description?: string;
-  isActive?: boolean;
-  imageUrl?: string;
-  userId: string;
-  seasons?: string[];
-  series?: string[];
-  tournaments?: string[];
-  scoreboards?: string[];
-  qualifications?: string[];
-  leagueSettings?: string[];
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface AmplifyLeagueCreateInput {
-  name: string;
-  description?: string;
-  isActive?: boolean;
-  imageUrl?: string;
-  userId: string;
-  seasons: string[];
-  series: string[];
-  tournaments: string[];
-  scoreboards: string[];
-  qualifications: string[];
-  leagueSettings: string[];
-}
-
-export interface AmplifyLeagueUpdateInput {
-  id: string;
-  name?: string;
-  description?: string;
-  isActive?: boolean;
-  imageUrl?: string;
-}
-
-export interface AmplifyLeagueSettingsInput {
-  leagueId: string;
-  defaultPointsSystem: string;
-  defaultGameType: string;
-  defaultBuyIn: number;
-  defaultStartingChips: number;
-  defaultBlindStructure: string;
-}
-
-export interface AmplifyActivityLogInput {
-  userId: string;
-  action: string;
-  entityType: string;
-  entityId: string;
-  details?: Record<string, unknown>;
-  timestamp: string;
-}
-
+// Legacy interface for backward compatibility
 export interface AmplifyFilterOptions {
   filter?: Record<string, unknown>;
   authMode?: string;
-}
-
-// Amplify client interface with proper typing
-export interface AmplifyDataClient {
-  models: {
-    League: {
-      create(
-        data: AmplifyLeagueCreateInput, 
-        options?: AmplifyAuthOptions
-      ): Promise<AmplifyResponse<AmplifyLeagueData>>;
-      get(
-        id: { id: string }, 
-        options?: AmplifyAuthOptions
-      ): Promise<AmplifyResponse<AmplifyLeagueData>>;
-      list(
-        options?: AmplifyFilterOptions
-      ): Promise<AmplifyListResponse<AmplifyLeagueData>>;
-      update(
-        data: AmplifyLeagueUpdateInput, 
-        options?: AmplifyAuthOptions
-      ): Promise<AmplifyResponse<AmplifyLeagueData>>;
-      delete(
-        id: { id: string }, 
-        options?: AmplifyAuthOptions
-      ): Promise<AmplifyResponse<AmplifyLeagueData>>;
-    };
-    LeagueSettings: {
-      create(
-        data: AmplifyLeagueSettingsInput, 
-        options?: AmplifyAuthOptions
-      ): Promise<AmplifyResponse<unknown>>;
-    };
-  };
-}
-
-export interface AmplifyActivityLogClient {
-  models: {
-    ActivityLog: {
-      create(
-        data: AmplifyActivityLogInput, 
-        options?: AmplifyAuthOptions
-      ): Promise<AmplifyResponse<unknown>>;
-    };
-  };
 }
