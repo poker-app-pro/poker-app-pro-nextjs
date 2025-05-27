@@ -1,9 +1,9 @@
 "use client"
 import { useState } from "react"
- import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
-import LeaguesList from "./_components/leagues-list"
+import LeaguesList from "@/src/adapters/nextjs/components/leagues-list.component"
 import { Plus, Search } from "lucide-react"
 import { FloatingActionButton } from "@/components/ui/floating-action-button"
 
