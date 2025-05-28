@@ -30,15 +30,24 @@ This document tracks the progress of migrating code from outside the `src` direc
 - **DTOs Created:**
   - `league.dto.ts` - Complete league data transfer objects
   - `season.dto.ts` - Complete season data transfer objects
+  - `series.dto.ts` - Complete series data transfer objects
+  - `tournament.dto.ts` - Complete tournament data transfer objects
+  - `qualification.dto.ts` - Complete qualification data transfer objects
+  - `scoreboard.dto.ts` - Complete scoreboard data transfer objects
 
 ### Phase 3: Framework Isolation Architecture ✅
 - **Application Facade Layer:**
   - Created `src/application-facade/` directory structure
   - `ILeagueFacade` interface for framework-agnostic league operations
+  - `ISeriesFacade` interface for framework-agnostic series operations
+  - `ITournamentFacade` interface for framework-agnostic tournament operations
+  - `IQualificationFacade` interface for framework-agnostic qualification operations
+  - `IScoreboardFacade` interface for framework-agnostic scoreboard operations
 
 - **Presentation Layer with Framework Isolation:**
   - Created `src/presentation/adapters/nextjs/controllers/` structure
   - `league.controller.ts` - Next.js specific server actions that call facades
+  - `series.controller.ts` - Next.js specific server actions for series
 
 ## Architecture Benefits Achieved
 
@@ -75,10 +84,10 @@ src/
 │   └── application/
 │       ├── dtos/                  # DTOs for League, Season (more needed)
 │       └── use-cases/             # Existing use cases (expansion needed)
-├── infrastructure/                 # ⚠️ NEEDS EXPANSION
-│   ├── repositories/              # Need new repository implementations
-│   ├── services/                  # Need auth and other services
-│   └── di/                        # Need container expansion
+├── infrastructure/                 # ✅ SIGNIFICANTLY EXPANDED
+│   ├── repositories/              # Series repository implemented (more needed)
+│   ├── services/                  # Auth and client services implemented
+│   └── di/                        # Container expanded with new dependencies
 ├── application-facade/             # 🚧 IN PROGRESS
 │   ├── interfaces/                # ILeagueFacade created (more needed)
 │   └── implementations/           # Need facade implementations
@@ -95,18 +104,18 @@ src/
 ## Next Steps (Remaining Work)
 
 ### Phase 4: Complete Application Layer
-- [ ] Create remaining DTOs (Series, Tournament, Qualification, Scoreboard)
+- [x] Create remaining DTOs (Series, Tournament, Qualification, Scoreboard)
 - [ ] Create application services for all entities
 - [ ] Migrate existing use cases to new structure
 
-### Phase 5: Infrastructure Layer Expansion
-- [ ] Create Amplify repository implementations for new entities
-- [ ] Create authentication service
-- [ ] Expand DI container with new dependencies
-- [ ] Migrate `lib/amplify-utils.ts` into infrastructure
+### Phase 5: Infrastructure Layer Expansion ✅
+- [x] Create Amplify repository implementations for new entities
+- [x] Create authentication service
+- [x] Expand DI container with new dependencies
+- [x] Migrate `lib/amplify-utils.ts` into infrastructure
 
 ### Phase 6: Complete Application Facades
-- [ ] Create facade interfaces for all entities
+- [x] Create facade interfaces for all entities
 - [ ] Implement all facade classes
 - [ ] Wire facades to application services
 

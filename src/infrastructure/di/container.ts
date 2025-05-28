@@ -1,13 +1,18 @@
 import { IPlayerRepository } from '../../core/domain/repositories/player.repository';
 import { IGameResultRepository } from '../../core/domain/repositories/game-result.repository';
+import { ISeriesRepository } from '../../core/domain/repositories/series.repository';
 import { AmplifyPlayerRepository } from '../repositories/amplify-player.repository';
 import { AmplifyGameResultRepository } from '../repositories/amplify-game-result.repository';
+import { AmplifySeriesRepository } from '../repositories/amplify-series.repository';
 
 import { CreatePlayerUseCase } from '../../core/application/use-cases/player/create-player.use-case';
 import { UpdatePlayerUseCase } from '../../core/application/use-cases/player/update-player.use-case';
 import { SearchPlayersUseCase } from '../../core/application/use-cases/player/search-players.use-case';
 import { CreateGameResultUseCase } from '../../core/application/use-cases/game-result/create-game-result.use-case';
 import { CalculatePointsUseCase } from '../../core/application/use-cases/game-result/calculate-points.use-case';
+
+import { IAuthService, AmplifyAuthService } from '../services/amplify-auth.service';
+import { IAmplifyClientService, AmplifyClientService } from '../services/amplify-client.service';
 
 /**
  * Dependency Injection Container
@@ -19,6 +24,11 @@ export class DIContainer {
   // Repository instances
   private _playerRepository: IPlayerRepository | null = null;
   private _gameResultRepository: IGameResultRepository | null = null;
+  private _seriesRepository: ISeriesRepository | null = null;
+  
+  // Service instances
+  private _authService: IAuthService | null = null;
+  private _amplifyClientService: IAmplifyClientService | null = null;
   
   // Use case instances
   private _createPlayerUseCase: CreatePlayerUseCase | null = null;
@@ -54,6 +64,30 @@ export class DIContainer {
       this._gameResultRepository = new AmplifyGameResultRepository();
     }
     return this._gameResultRepository;
+  }
+
+  get seriesRepository(): ISeriesRepository {
+    if (!this._seriesRepository) {
+      this._seriesRepository = new AmplifySeriesRepository();
+    }
+    return this._seriesRepository;
+  }
+
+  /**
+   * Service Getters
+   */
+  get authService(): IAuthService {
+    if (!this._authService) {
+      this._authService = new AmplifyAuthService();
+    }
+    return this._authService;
+  }
+
+  get amplifyClientService(): IAmplifyClientService {
+    if (!this._amplifyClientService) {
+      this._amplifyClientService = AmplifyClientService.getInstance();
+    }
+    return this._amplifyClientService;
   }
 
   /**
@@ -103,6 +137,9 @@ export class DIContainer {
   reset(): void {
     this._playerRepository = null;
     this._gameResultRepository = null;
+    this._seriesRepository = null;
+    this._authService = null;
+    this._amplifyClientService = null;
     this._createPlayerUseCase = null;
     this._updatePlayerUseCase = null;
     this._searchPlayersUseCase = null;
@@ -126,6 +163,18 @@ export class DIContainer {
     this._gameResultRepository = repository;
     // Reset dependent use cases
     this._createGameResultUseCase = null;
+  }
+
+  setSeriesRepository(repository: ISeriesRepository): void {
+    this._seriesRepository = repository;
+  }
+
+  setAuthService(service: IAuthService): void {
+    this._authService = service;
+  }
+
+  setAmplifyClientService(service: IAmplifyClientService): void {
+    this._amplifyClientService = service;
   }
 }
 
