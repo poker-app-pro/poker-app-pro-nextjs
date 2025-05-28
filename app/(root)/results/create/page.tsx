@@ -334,65 +334,26 @@ export default function CreateTournamentPage() {
               {seriesError && <p className="text-destructive text-xs mt-1">{seriesError}</p>}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label htmlFor="totalPlayers" className="material-label">
-                  Total Players*
-                </label>
-                <input
-                  id="totalPlayers"
-                  type="number"
-                  min={rankingPlayers.length > 0 ? rankingPlayers.length : 1}
-                  value={totalPlayers || ""}
-                  onChange={(e) => setTotalPlayers(Number.parseInt(e.target.value) || 0)}
-                  className={`material-input ${totalPlayersError ? "border-destructive" : ""}`}
-                  disabled={state === "submitting"}
-                />
-                {totalPlayersError ? (
-                  <p className="text-destructive text-xs mt-1">{totalPlayersError}</p>
-                ) : (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Must be at least equal to the number of ranked players ({rankingPlayers.length})
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="gameType" className="material-label">
-                  Game Type*
-                </label>
-                <select
-                  id="gameType"
-                  value={gameType}
-                  onChange={(e) => setGameType(e.target.value as "Tournament" | "Consolation")}
-                  className="material-input"
-                  disabled={state === "submitting"}
-                >
-                  <option value="Tournament">Tournament</option>
-                  <option value="Consolation">Consolation</option>
-                </select>
+            {/* Game Type - Main Focus */}
+            <div className="border border-gray-200 rounded-md p-4">
+              <label htmlFor="gameType" className="material-label">
+                Game Type*
+              </label>
+              <select
+                id="gameType"
+                value={gameType}
+                onChange={(e) => setGameType(e.target.value as "Tournament" | "Consolation")}
+                className="material-input"
+                disabled={state === "submitting"}
+              >
+                <option value="Tournament">Tournament</option>
+                <option value="Consolation">Consolation</option>
+              </select>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {gameType === "Tournament" 
-                    ? "Top 10 players get points: players × (11 - rank)" 
-                    : "Top 3 players get fixed points: 100, 50, 25"}
-                </p>
-              </div>
-
-              <div>
-                <label htmlFor="gameTime" className="material-label flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Game Time*
-                </label>
-                <input
-                  id="gameTime"
-                  type="datetime-local"
-                  value={gameTime}
-                  onChange={(e) => setGameTime(e.target.value)}
-                  className={`material-input ${gameTimeError ? "border-destructive" : ""}`}
-                  disabled={state === "submitting"}
-                />
-                {gameTimeError && <p className="text-destructive text-xs mt-1">{gameTimeError}</p>}
-              </div>
+                {gameType === "Tournament" 
+                  ? "Top 10 players get points: players × (11 - rank)" 
+                  : "Top 3 players get fixed points: 100, 50, 25"}
+              </p>
             </div>
 
             {/* Player Rankings Section */}
@@ -459,6 +420,71 @@ export default function CreateTournamentPage() {
               </div>
             </div>
 
+            {/* Game Details - Rarely Updated */}
+            <div className="border-t border-gray-200 pt-6 mt-8">
+              <h3 className="text-sm font-medium text-gray-500 mb-4 uppercase tracking-wide">Game Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="totalPlayers" className="material-label">
+                    Total Players*
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {/* Mobile increment/decrement buttons */}
+                    <button
+                      type="button"
+                      onClick={() => setTotalPlayers(Math.max(rankingPlayers.length, totalPlayers - 1))}
+                      className="md:hidden flex items-center justify-center w-10 h-10 border border-gray-300 rounded-md bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={state === "submitting" || totalPlayers <= rankingPlayers.length}
+                    >
+                      <span className="text-lg font-medium">−</span>
+                    </button>
+                    
+                    <input
+                      id="totalPlayers"
+                      type="number"
+                      min={rankingPlayers.length > 0 ? rankingPlayers.length : 1}
+                      value={totalPlayers || ""}
+                      onChange={(e) => setTotalPlayers(Number.parseInt(e.target.value) || 0)}
+                      className={`material-input flex-1 ${totalPlayersError ? "border-destructive" : ""}`}
+                      disabled={state === "submitting"}
+                    />
+                    
+                    {/* Mobile increment/decrement buttons */}
+                    <button
+                      type="button"
+                      onClick={() => setTotalPlayers(totalPlayers + 1)}
+                      className="md:hidden flex items-center justify-center w-10 h-10 border border-gray-300 rounded-md bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={state === "submitting"}
+                    >
+                      <span className="text-lg font-medium">+</span>
+                    </button>
+                  </div>
+                  {totalPlayersError ? (
+                    <p className="text-destructive text-xs mt-1">{totalPlayersError}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Must be at least equal to the number of ranked players ({rankingPlayers.length})
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="gameTime" className="material-label flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Game Time*
+                  </label>
+                  <input
+                    id="gameTime"
+                    type="datetime-local"
+                    value={gameTime}
+                    onChange={(e) => setGameTime(e.target.value)}
+                    className={`material-input ${gameTimeError ? "border-destructive" : ""}`}
+                    disabled={state === "submitting"}
+                  />
+                  {gameTimeError && <p className="text-destructive text-xs mt-1">{gameTimeError}</p>}
+                </div>
+              </div>
+            </div>
 
             <div className="flex justify-end gap-4 pt-4">
               <button
