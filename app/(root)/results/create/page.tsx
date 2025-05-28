@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Breadcrumb } from "@/components/ui/breadcrumb"
-import { Trophy, Loader2, AlertCircle, X, Users, Calendar } from "lucide-react"
+import { Trophy, Loader2, AlertCircle, X, Users, Calendar, Plus, Minus } from "lucide-react"
 import { PlayerAutoSuggest } from "@/components/ui/player-auto-suggest"
 import { client } from "@/components/AmplifyClient"
 import { saveGameResults } from "@/app/__actions/results"
@@ -15,6 +15,10 @@ interface Player {
   id: string
   name: string
   isNew?: boolean
+}
+
+interface BountyPlayer extends Player {
+  bountyCount: number
 }
 
 interface Series {
@@ -46,7 +50,7 @@ export default function CreateTournamentPage() {
 
   // Player sections
   const [rankingPlayers, setRankingPlayers] = useState<Player[]>([])
-  const [bountyPlayers, setBountyPlayers] = useState<Player[]>([])
+  const [bountyPlayers, setBountyPlayers] = useState<BountyPlayer[]>([])
   const [consolationPlayers, setConsolationPlayers] = useState<Player[]>([])
 
   // Validation errors
@@ -167,7 +171,17 @@ export default function CreateTournamentPage() {
         setTotalPlayers(newRankingPlayers.length)
       }
     } else if (section === "bounties") {
-      setBountyPlayers([...bountyPlayers, player])
+      // Check if player already exists in bounties, if so increment count
+      const existingBountyIndex = bountyPlayers.findIndex((p) => p.id === player.id)
+      if (existingBountyIndex >= 0) {
+        const updatedBountyPlayers = [...bountyPlayers]
+        updatedBountyPlayers[existingBountyIndex].bountyCount += 1
+        setBountyPlayers(updatedBountyPlayers)
+      } else {
+        // Add new bounty player with count of 1
+        const bountyPlayer: BountyPlayer = { ...player, bountyCount: 1 }
+        setBountyPlayers([...bountyPlayers, bountyPlayer])
+      }
     } else if (section === "consolation") {
       setConsolationPlayers([...consolationPlayers, player])
     }
@@ -195,6 +209,28 @@ export default function CreateTournamentPage() {
         setTemporaryPlayers(prev => prev.filter(tp => tp.id !== player.id))
       }
     }
+  }
+
+  // Handle incrementing bounty count
+  const handleIncrementBounty = (playerId: string) => {
+    setBountyPlayers(prev => 
+      prev.map(player => 
+        player.id === playerId 
+          ? { ...player, bountyCount: player.bountyCount + 1 }
+          : player
+      )
+    )
+  }
+
+  // Handle decrementing bounty count
+  const handleDecrementBounty = (playerId: string) => {
+    setBountyPlayers(prev => 
+      prev.map(player => 
+        player.id === playerId 
+          ? { ...player, bountyCount: Math.max(1, player.bountyCount - 1) }
+          : player
+      )
+    )
   }
 
   const validateForm = (): boolean => {
@@ -403,15 +439,41 @@ export default function CreateTournamentPage() {
                           {player.isNew && (
                             <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded">New</span>
                           )}
+                          <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-medium">
+                            {player.bountyCount > 1 ? `${player.bountyCount} Bounties` : "1 Bounty"}
+                          </span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemovePlayer(player, "bounties")}
-                          className="text-muted-foreground hover:text-destructive transition-colors"
-                          disabled={state === "submitting"}
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center border border-gray-300 rounded-md">
+                            <button
+                              type="button"
+                              onClick={() => handleDecrementBounty(player.id)}
+                              className="flex items-center justify-center w-8 h-8 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={state === "submitting" || player.bountyCount <= 1}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </button>
+                            <span className="px-2 text-sm font-medium min-w-[2rem] text-center">
+                              {player.bountyCount}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleIncrementBounty(player.id)}
+                              className="flex items-center justify-center w-8 h-8 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={state === "submitting"}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePlayer(player, "bounties")}
+                            className="text-muted-foreground hover:text-destructive transition-colors"
+                            disabled={state === "submitting"}
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                     ))
                   )}

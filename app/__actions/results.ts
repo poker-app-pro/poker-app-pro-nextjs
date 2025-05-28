@@ -344,20 +344,21 @@ export async function saveGameResults(formData: FormData) {
       }
     }
 
-    // 4. Process bounty players (map temporary IDs and record in notes)
+    // 4. Process bounty players (map temporary IDs and record in notes with counts)
     if (bounties.length > 0) {
-      const bountyNames = bounties.map((p) => {
+      const bountyEntries = bounties.map((p) => {
         // Map temporary ID to real player name if needed
-        if (tempPlayerIdMap.has(p.id)) {
-          return p.name // Use the name from the bounty object
-        }
-        return p.name
-      }).join(", ")
+        const playerName = tempPlayerIdMap.has(p.id) ? p.name : p.name
+        const count = p.bountyCount || 1
+        
+        // Create multiple entries for each bounty count
+        return Array(count).fill(playerName)
+      }).flat().join(", ")
       
       await cookieBasedClient.models.Tournament.update(
         {
           id: tournamentId,
-          notes: `Bounty players: ${bountyNames}`,
+          notes: `Bounty players: ${bountyEntries}`,
         },
         {
           authMode: "userPool",
