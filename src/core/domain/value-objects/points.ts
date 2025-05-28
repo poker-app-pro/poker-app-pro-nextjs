@@ -24,6 +24,17 @@ export class Points {
   }
 
   /**
+   * Subtract points from current points
+   */
+  subtract(other: Points): Points {
+    const result = this._value - other._value;
+    if (result < 0) {
+      throw new Error('Cannot subtract points: result would be negative');
+    }
+    return new Points(result);
+  }
+
+  /**
    * Check if points are zero
    */
   isZero(): boolean {

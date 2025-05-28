@@ -19,11 +19,8 @@ const config = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  moduleNameMapping: {
-    '^@/(.*)$': '<rootDir>/$1',
-    '^@core/(.*)$': '<rootDir>/src/core/$1',
-    '^@infrastructure/(.*)$': '<rootDir>/src/infrastructure/$1',
-    '^@adapters/(.*)$': '<rootDir>/src/adapters/$1'
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/$1'
   }
 };
 

@@ -71,6 +71,14 @@ export class GameTime {
   }
 
   /**
+   * Calculate the number of days between this date and another date
+   */
+  daysBetween(other: GameTime): number {
+    const timeDiff = Math.abs(other._value.getTime() - this._value.getTime());
+    return Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+  }
+
+  /**
    * Get a human-readable format
    */
   toDisplayString(): string {
