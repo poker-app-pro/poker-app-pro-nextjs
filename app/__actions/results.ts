@@ -9,6 +9,7 @@ import { getCurrentUser } from "aws-amplify/auth/server";
 import { cookies } from "next/headers";
 import { scoreGameUseCase } from "@/src/core/application/use-cases/scoring/score-game.use-case";
 import { GameType, type GameResult } from "@/src/core/domain/entities/game-result.entity";
+
 export async function saveGameResults(formData: FormData) {
   try {
     // Get current user
@@ -28,12 +29,16 @@ export async function saveGameResults(formData: FormData) {
     const rankingsJson = formData.get("rankings") as string
     const bountiesJson = formData.get("bounties") as string
     const consolationJson = formData.get("consolation") as string
+    const temporaryPlayersJson = formData.get("temporaryPlayers") as string || "[]"
+    
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rankings = JSON.parse(rankingsJson) as any[]
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const bounties = JSON.parse(bountiesJson) as any[]
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const consolation = JSON.parse(consolationJson) as any[]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const temporaryPlayers = JSON.parse(temporaryPlayersJson) as any[]
 
     // Validate total players is at least equal to the number of ranked players
     if (totalPlayers < rankings.length) {
@@ -92,14 +97,56 @@ export async function saveGameResults(formData: FormData) {
     const tournament = tournamentResponse.data
     const tournamentId = tournament.id
 
-    // 2. Process ranked players
+    // 2. Create temporary players first and map their IDs
+    const tempPlayerIdMap = new Map<string, string>()
+    
+    for (const tempPlayer of temporaryPlayers) {
+      const newPlayerResponse = await cookieBasedClient.models.Player.create(
+        {
+          name: tempPlayer.name,
+          userId,
+          isActive: true,
+          joinDate: new Date().toISOString().split("T")[0],
+          tournamentPlayers: [],
+          scoreboards: [],
+          qualifications: [],
+        },
+        {
+          authMode: "userPool",
+        },
+      )
+
+      if (!newPlayerResponse.data) {
+        throw new Error(`Failed to create temporary player: ${tempPlayer.name}`)
+      }
+
+      // Map temporary ID to real database ID
+      tempPlayerIdMap.set(tempPlayer.id, newPlayerResponse.data.id)
+    }
+
+    // 3. Process ranked players
     for (const player of rankings) {
-      // Check if player exists, create if not
+      // Check if player exists, create if not, or map temporary ID to real ID
       let playerId = player.id
       let playerData
 
-      if (player.isNew) {
-        // Create new player
+      // Check if this is a temporary player that was just created
+      if (tempPlayerIdMap.has(player.id)) {
+        playerId = tempPlayerIdMap.get(player.id)!
+        const playerResponse = await cookieBasedClient.models.Player.get(
+          {
+            id: playerId,
+          },
+          {
+            authMode: "userPool",
+          },
+        )
+        if (!playerResponse.data) {
+          throw new Error(`Temporary player not found: ${playerId}`)
+        }
+        playerData = playerResponse.data
+      } else if (player.isNew) {
+        // Create new player (fallback for any missed temporary players)
         const newPlayerResponse = await cookieBasedClient.models.Player.create(
           {
             name: player.name,
@@ -297,9 +344,16 @@ export async function saveGameResults(formData: FormData) {
       }
     }
 
-    // 3. Process bounty players (just record them in notes for now)
+    // 4. Process bounty players (map temporary IDs and record in notes)
     if (bounties.length > 0) {
-      const bountyNames = bounties.map((p) => p.name).join(", ")
+      const bountyNames = bounties.map((p) => {
+        // Map temporary ID to real player name if needed
+        if (tempPlayerIdMap.has(p.id)) {
+          return p.name // Use the name from the bounty object
+        }
+        return p.name
+      }).join(", ")
+      
       await cookieBasedClient.models.Tournament.update(
         {
           id: tournamentId,
@@ -311,9 +365,16 @@ export async function saveGameResults(formData: FormData) {
       )
     }
 
-    // 4. Process consolation players (just record them in notes for now)
+    // 5. Process consolation players (map temporary IDs and record in notes)
     if (consolation.length > 0) {
-      const consolationNames = consolation.map((p) => p.name).join(", ")
+      const consolationNames = consolation.map((p) => {
+        // Map temporary ID to real player name if needed
+        if (tempPlayerIdMap.has(p.id)) {
+          return p.name // Use the name from the consolation object
+        }
+        return p.name
+      }).join(", ")
+      
       const currentNotes = tournament.notes || ""
       await cookieBasedClient.models.Tournament.update(
         {
@@ -328,7 +389,7 @@ export async function saveGameResults(formData: FormData) {
       )
     }
 
-    // 5. Update relationships
+    // 6. Update relationships
 
     // Update series with tournament
     await cookieBasedClient.models.Series.update(

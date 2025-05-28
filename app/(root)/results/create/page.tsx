@@ -33,7 +33,7 @@ export default function CreateTournamentPage() {
   const [state, setState] = useState<FormState>("idle")
   const [error, setError] = useState("")
   const [series, setSeries] = useState<Series[]>([])
-  const [allPlayers, setAllPlayers] = useState<Player[]>([])
+  const [temporaryPlayers, setTemporaryPlayers] = useState<Player[]>([])
 
   // Form fields
   const [seriesId, setSeriesId] = useState("")
@@ -61,7 +61,7 @@ export default function CreateTournamentPage() {
     }
   }, [rankingPlayers, totalPlayers])
 
-  // Fetch series and players on component mount
+  // Fetch series on component mount
   useEffect(() => {
     async function fetchData() {
       try {
@@ -95,24 +95,9 @@ export default function CreateTournamentPage() {
 
           setSeries(sortedSeries)
         }
-
-        // Fetch active players
-        const playersResponse = await client.models.Player.list({
-          authMode: "userPool",
-          filter: { isActive: { eq: true } },
-        })
-
-        if (playersResponse.data.length > 0) {
-          const playersList = playersResponse.data.map((player) => ({
-            id: player.id,
-            name: player.name,
-          }))
-
-          setAllPlayers(playersList)
-        }
       } catch (error) {
         console.error("Error fetching data:", error)
-        setError("Failed to load series and players data")
+        setError("Failed to load series data")
       }
     }
 
@@ -132,23 +117,37 @@ export default function CreateTournamentPage() {
     {} as Record<string, Series[]>,
   )
 
-  // Update the getAvailablePlayersForSection function to allow all players for bounties
-  const getAvailablePlayersForSection = (section: "rankings" | "bounties" | "consolation") => {
+  // Get excluded player IDs for each section
+  const getExcludedPlayerIds = (section: "rankings" | "bounties" | "consolation") => {
     if (section === "rankings") {
-      // For rankings, filter out players already in rankings
-      return allPlayers.filter((player) => !rankingPlayers.some((p) => p.id === player.id))
+      return rankingPlayers.map(p => p.id)
     } else if (section === "bounties") {
-      // For bounties, use all players but filter out those already in bounties
-      return allPlayers.filter((player) => !bountyPlayers.some((p) => p.id === player.id))
+      return bountyPlayers.map(p => p.id)
     } else if (section === "consolation") {
-      // For consolation, use all players but filter out those already in consolation
-      return allPlayers.filter((player) => !consolationPlayers.some((p) => p.id === player.id))
+      return consolationPlayers.map(p => p.id)
     }
     return []
   }
 
-  // Update the handleAddPlayer function to allow any player to be added as a bounty
+  // Handle adding a player to a section
   const handleAddPlayer = (player: Player, section: "rankings" | "bounties" | "consolation") => {
+    // If this is a new player, add to temporary players
+    if (player.isNew) {
+      const newPlayer = {
+        ...player,
+        id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        isNew: true,
+      }
+      
+      // Add to temporary players if not already there
+      if (!temporaryPlayers.some(tp => tp.name.toLowerCase() === newPlayer.name.toLowerCase())) {
+        setTemporaryPlayers(prev => [...prev, newPlayer])
+      }
+      
+      // Use the new player for adding to the section
+      player = newPlayer
+    }
+
     // If player is already in the target section, do nothing
     if (
       (section === "rankings" && rankingPlayers.some((p) => p.id === player.id)) ||
@@ -174,7 +173,7 @@ export default function CreateTournamentPage() {
     }
   }
 
-  // Update the handleRemovePlayer function to not check if player is in rankings when removing from bounties
+  // Handle removing a player from a section
   const handleRemovePlayer = (player: Player, section: "rankings" | "bounties" | "consolation") => {
     // Remove player from the appropriate section
     if (section === "rankings") {
@@ -183,6 +182,18 @@ export default function CreateTournamentPage() {
       setBountyPlayers(bountyPlayers.filter((p) => p.id !== player.id))
     } else if (section === "consolation") {
       setConsolationPlayers(consolationPlayers.filter((p) => p.id !== player.id))
+    }
+
+    // If this was a temporary player and it's not used in any other section, remove it
+    if (player.isNew) {
+      const isUsedElsewhere = 
+        (section !== "rankings" && rankingPlayers.some(p => p.id === player.id)) ||
+        (section !== "bounties" && bountyPlayers.some(p => p.id === player.id)) ||
+        (section !== "consolation" && consolationPlayers.some(p => p.id === player.id))
+      
+      if (!isUsedElsewhere) {
+        setTemporaryPlayers(prev => prev.filter(tp => tp.id !== player.id))
+      }
     }
   }
 
@@ -253,12 +264,15 @@ export default function CreateTournamentPage() {
       formData.append("rankings", JSON.stringify(rankings))
       formData.append("bounties", JSON.stringify(bountyPlayers))
       formData.append("consolation", JSON.stringify(consolationPlayers))
+      formData.append("temporaryPlayers", JSON.stringify(temporaryPlayers))
 
       // Call the server action
       const result = await saveGameResults(formData)
 
       if (result.success) {
         setState("success")
+        // Clear temporary players after successful save
+        setTemporaryPlayers([])
 
         // After 1 second, redirect to results page
         setTimeout(() => {
@@ -344,7 +358,8 @@ export default function CreateTournamentPage() {
               <div className="space-y-4">
                 <PlayerAutoSuggest
                   onSelect={(player) => handleAddPlayer(player, "rankings")}
-                  existingPlayers={getAvailablePlayersForSection("rankings")}
+                  temporaryPlayers={temporaryPlayers}
+                  excludePlayerIds={getExcludedPlayerIds("rankings")}
                   placeholder="Search players to add to rankings"
                 />
 
@@ -366,7 +381,8 @@ export default function CreateTournamentPage() {
               <div className="space-y-4">
                 <PlayerAutoSuggest
                   onSelect={(player) => handleAddPlayer(player, "bounties")}
-                  existingPlayers={getAvailablePlayersForSection("bounties")}
+                  temporaryPlayers={temporaryPlayers}
+                  excludePlayerIds={getExcludedPlayerIds("bounties")}
                   placeholder="Search players to add as bounties"
                   helperText="Add players who were bounties in this tournament"
                 />
@@ -382,7 +398,12 @@ export default function CreateTournamentPage() {
                         key={player.id}
                         className="flex items-center justify-between bg-white border border-gray-200 rounded-md p-3"
                       >
-                        <span>{player.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span>{player.name}</span>
+                          {player.isNew && (
+                            <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded">New</span>
+                          )}
+                        </div>
                         <button
                           type="button"
                           onClick={() => handleRemovePlayer(player, "bounties")}
