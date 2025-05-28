@@ -334,28 +334,6 @@ export default function CreateTournamentPage() {
               {seriesError && <p className="text-destructive text-xs mt-1">{seriesError}</p>}
             </div>
 
-            {/* Game Type - Main Focus */}
-            <div className="border border-gray-200 rounded-md p-4">
-              <label htmlFor="gameType" className="material-label">
-                Game Type*
-              </label>
-              <select
-                id="gameType"
-                value={gameType}
-                onChange={(e) => setGameType(e.target.value as "Tournament" | "Consolation")}
-                className="material-input"
-                disabled={state === "submitting"}
-              >
-                <option value="Tournament">Tournament</option>
-                <option value="Consolation">Consolation</option>
-              </select>
-                <p className="text-xs text-muted-foreground mt-1">
-                {gameType === "Tournament" 
-                  ? "Top 10 players get points: players × (11 - rank)" 
-                  : "Top 3 players get fixed points: 100, 50, 25"}
-              </p>
-            </div>
-
             {/* Player Rankings Section */}
             <div className="border border-gray-200 rounded-md p-4">
               <label className="material-label flex items-center gap-2 mb-4">
@@ -420,6 +398,28 @@ export default function CreateTournamentPage() {
               </div>
             </div>
 
+            {/* Game Type - Main Focus */}
+            <div className="border border-gray-200 rounded-md p-4">
+              <label htmlFor="gameType" className="material-label">
+                Game Type*
+              </label>
+              <select
+                id="gameType"
+                value={gameType}
+                onChange={(e) => setGameType(e.target.value as "Tournament" | "Consolation")}
+                className="material-input"
+                disabled={state === "submitting"}
+              >
+                <option value="Tournament">Tournament</option>
+                <option value="Consolation">Consolation</option>
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {gameType === "Tournament"
+                  ? "Top 10 players get points: players × (11 - rank)"
+                  : "Top 3 players get fixed points: 100, 50, 25"}
+              </p>
+            </div>
+
             {/* Game Details - Rarely Updated */}
             <div className="border-t border-gray-200 pt-6 mt-8">
               <h3 className="text-sm font-medium text-gray-500 mb-4 uppercase tracking-wide">Game Details</h3>
@@ -438,7 +438,7 @@ export default function CreateTournamentPage() {
                     >
                       <span className="text-lg font-medium">−</span>
                     </button>
-                    
+
                     <input
                       id="totalPlayers"
                       type="number"
@@ -448,7 +448,7 @@ export default function CreateTournamentPage() {
                       className={`material-input flex-1 ${totalPlayersError ? "border-destructive" : ""}`}
                       disabled={state === "submitting"}
                     />
-                    
+
                     {/* Mobile increment/decrement buttons */}
                     <button
                       type="button"
