@@ -110,3 +110,167 @@ These use cases cover the major functionalities of the system, from league creat
    - **View League History**: Admins and organizers can view the historical performance of leagues, including past seasons, series, and tournaments.
    - **Track Player Historical Performance**: Players can view their historical performance across tournaments and series, including total points and final event results.
 
+## Clean Architecture Refactoring Plan for Poker App Pro
+
+Based on my analysis of your current codebase, I can see you have a Next.js application with AWS Amplify backend that manages poker tournaments, leagues, players, and scoring. The current architecture has business logic mixed with framework-specific code in the `app/__actions/` directory.
+
+Here's my comprehensive plan to refactor this into a Clean Architecture following the onion pattern, working from the inside out:
+
+### Current State Analysis
+
+Your application currently has:
+- **Data Models**: Defined in Amplify schema (League, Tournament, Player, etc.)
+- **Business Logic**: Mixed with Next.js server actions in `app/__actions/`
+- **Framework Dependencies**: Tightly coupled to Next.js and AWS Amplify
+- **Scoring Logic**: Hardcoded in server actions (e.g., `calculatePoints` function)
+
+### Phase 1: Domain Layer (Core/Innermost Layer)
+
+#### 1.1 Domain Entities
+Create pure TypeScript classes representing core business concepts:
+- `League` - Core league business rules
+- `Tournament` - Tournament lifecycle and rules
+- `Player` - Player information and behavior
+- `GameResult` - Individual game outcome
+- `Scoreboard` - Aggregated scoring data
+- `Qualification` - Tournament qualification rules
+
+#### 1.2 Value Objects
+- `Points` - Encapsulate point calculation logic
+- `Position` - Tournament finishing position
+- `GameTime` - Tournament date/time handling
+- `BuyIn` - Buy-in amount with validation
+
+#### 1.3 Domain Services
+- `ScoringStrategy` - Different point calculation algorithms
+- `QualificationService` - Determine tournament qualifications
+- `TournamentRules` - Business rules for tournaments
+
+#### 1.4 Repository Interfaces
+- `ILeagueRepository`
+- `ITournamentRepository` 
+- `IPlayerRepository`
+- `IScoreboardRepository`
+
+#### 1.5 Domain Events
+- `TournamentCompleted`
+- `PlayerRegistered`
+- `ScoreboardUpdated`
+
+### Phase 2: Application Layer (Use Cases)
+
+#### 2.1 Use Cases
+- `CreateTournament`
+- `RecordGameResults`
+- `CalculateStandings`
+- `RegisterPlayer`
+- `GenerateScoreboard`
+
+#### 2.2 Command/Query Handlers
+- `CreateTournamentHandler`
+- `RecordGameResultsHandler`
+- `GetTournamentResultsHandler`
+- `GetStandingsHandler`
+
+#### 2.3 DTOs (Data Transfer Objects)
+- Input/Output objects for each use case
+- Validation logic for commands
+
+### Phase 3: Infrastructure Layer
+
+#### 3.1 Repository Implementations
+- `AmplifyLeagueRepository` - Implements `ILeagueRepository`
+- `AmplifyTournamentRepository` - Implements `ITournamentRepository`
+- `AmplifyPlayerRepository` - Implements `IPlayerRepository`
+
+#### 3.2 External Services
+- `AmplifyDataService` - Wrapper around Amplify client
+- `AuthenticationService` - User authentication
+- `LoggingService` - Activity logging
+
+#### 3.3 Dependency Injection Container
+- IoC container to wire up dependencies
+- Configuration for different environments
+
+### Phase 4: Adapter Layer (Framework Integration)
+
+#### 4.1 Next.js Adapters
+- `NextJsLeagueAdapter` - Converts between Next.js and core
+- `NextJsTournamentAdapter` - Tournament-specific adaptations
+- `NextJsAuthAdapter` - Authentication integration
+
+#### 4.2 Server Actions (Thin Layer)
+- Refactor existing server actions to be thin wrappers
+- Delegate to use cases through adapters
+
+#### 4.3 API Adapters
+- REST API adapters if needed
+- GraphQL adapters for Amplify integration
+
+### Phase 5: Testing Strategy
+
+#### 5.1 Domain Layer Tests
+- Unit tests for entities and value objects
+- Domain service tests with mocked dependencies
+- Business rule validation tests
+
+#### 5.2 Application Layer Tests
+- Use case tests with mocked repositories
+- Command/Query handler tests
+- Integration tests for complete workflows
+
+#### 5.3 Infrastructure Tests
+- Repository implementation tests
+- External service integration tests
+
+#### 5.4 Adapter Tests
+- Framework adapter tests
+- End-to-end tests through adapters
+
+### Implementation Steps (Working Inside-Out)
+
+#### Step 1: Domain Entities & Value Objects
+1. Create `src/core/domain/entities/` with core business entities
+2. Create `src/core/domain/value-objects/` for value objects
+3. Write comprehensive unit tests for all domain logic
+
+#### Step 2: Domain Services & Repository Interfaces
+1. Create `src/core/domain/services/` for domain services
+2. Create `src/core/domain/repositories/` for repository interfaces
+3. Implement scoring strategies and business rules
+
+#### Step 3: Application Use Cases
+1. Create `src/core/application/use-cases/` for business operations
+2. Create `src/core/application/dtos/` for data transfer objects
+3. Implement command/query handlers
+
+#### Step 4: Infrastructure Implementation
+1. Create `src/infrastructure/repositories/` for Amplify implementations
+2. Create `src/infrastructure/services/` for external services
+3. Set up dependency injection container
+
+#### Step 5: Framework Adapters
+1. Create `src/adapters/nextjs/` for Next.js specific code
+2. Refactor existing server actions to use adapters
+3. Create thin integration layer
+
+#### Step 6: Migration & Testing
+1. Gradually migrate existing functionality
+2. Ensure all tests pass at each step
+3. Maintain backward compatibility during transition
+
+### Key Benefits of This Approach
+
+1. **Framework Independence**: Core business logic isolated from Next.js
+2. **Testability**: Each layer can be tested independently
+3. **Maintainability**: Clear separation of concerns
+4. **Flexibility**: Easy to swap out infrastructure components
+5. **Scalability**: Well-defined boundaries for future growth
+
+### Testing-First Approach
+
+For each layer, we'll:
+1. Write tests first (TDD approach)
+2. Implement the minimal code to pass tests
+3. Refactor while keeping tests green
+4. Ensure 100% test coverage for domain layer
