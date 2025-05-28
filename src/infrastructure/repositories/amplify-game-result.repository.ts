@@ -149,7 +149,7 @@ export class AmplifyGameResultRepository implements IGameResultRepository {
       }
 
       // Convert to domain entities
-      let gameResults = await Promise.all(
+      const gameResults = await Promise.all(
         tournamentPlayers.map(tp => this.toDomainEntity(tp))
       );
 
@@ -204,8 +204,8 @@ export class AmplifyGameResultRepository implements IGameResultRepository {
         pageSize,
         totalPages,
       };
-    } catch (error) {
-      throw new Error(`Failed to search game results: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } catch {
+      throw new Error('Failed to search game results');
     }
   }
 
@@ -335,7 +335,7 @@ export class AmplifyGameResultRepository implements IGameResultRepository {
     try {
       const gameResult = await this.findById(id);
       return gameResult !== null;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

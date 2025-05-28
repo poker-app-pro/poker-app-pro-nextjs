@@ -2,7 +2,11 @@ import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../amplify/data/resource';
 import { Player } from '../../core/domain/entities/player';
 import { GameTime } from '../../core/domain/value-objects/game-time';
-import { IPlayerRepository, PlayerSearchCriteria, PlayerSearchResult } from '../../core/domain/repositories/player.repository';
+import { 
+  IPlayerRepository, 
+  PlayerSearchCriteria, 
+  PlayerSearchResult 
+} from '../../core/domain/repositories/player.repository';
 
 /**
  * Amplify implementation of Player Repository
@@ -14,14 +18,14 @@ export class AmplifyPlayerRepository implements IPlayerRepository {
   async save(player: Player): Promise<Player> {
     try {
       // Check if player exists (update vs create)
-      const existingPlayer = await this.findById(player.id);
+      const existingPlayer = await this.client.models.Player.get({ id: player.id });
       
-      if (existingPlayer) {
+      if (existingPlayer.data) {
         // Update existing player
         const { data: updatedPlayer } = await this.client.models.Player.update({
           id: player.id,
           name: player.name,
-          userId: 'system', // Default userId for now
+          userId: 'system', // TODO: Get from auth context
           email: player.email || null,
           phone: player.phone || null,
           profileImageUrl: player.profileImageUrl || null,
@@ -40,7 +44,7 @@ export class AmplifyPlayerRepository implements IPlayerRepository {
         const { data: newPlayer } = await this.client.models.Player.create({
           id: player.id,
           name: player.name,
-          userId: 'system', // Default userId for now
+          userId: 'system', // TODO: Get from auth context
           email: player.email || null,
           phone: player.phone || null,
           profileImageUrl: player.profileImageUrl || null,
@@ -83,12 +87,8 @@ export class AmplifyPlayerRepository implements IPlayerRepository {
       const filters: any[] = [];
       
       if (criteria.query) {
-        filters.push({
-          or: [
-            { name: { contains: criteria.query } },
-            { email: { contains: criteria.query } },
-          ]
-        });
+        // Search in name (case-insensitive)
+        filters.push({ name: { contains: criteria.query } });
       }
 
       if (criteria.isActive !== undefined) {
@@ -123,7 +123,7 @@ export class AmplifyPlayerRepository implements IPlayerRepository {
       }
 
       // Convert to domain entities
-      let domainPlayers = players.map(player => this.toDomainEntity(player));
+      const domainPlayers = players.map(p => this.toDomainEntity(p));
 
       // Apply sorting
       if (criteria.sortBy) {
@@ -183,7 +183,7 @@ export class AmplifyPlayerRepository implements IPlayerRepository {
         return [];
       }
 
-      return players.map(player => this.toDomainEntity(player));
+      return players.map(p => this.toDomainEntity(p));
     } catch (error) {
       throw new Error(`Failed to find active players: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -193,7 +193,7 @@ export class AmplifyPlayerRepository implements IPlayerRepository {
     try {
       const player = await this.findById(id);
       return player !== null;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -228,7 +228,7 @@ export class AmplifyPlayerRepository implements IPlayerRepository {
         phone: amplifyPlayer.phone || undefined,
         profileImageUrl: amplifyPlayer.profileImageUrl || undefined,
         notes: amplifyPlayer.notes || undefined,
-        isActive: amplifyPlayer.isActive,
+        isActive: amplifyPlayer.isActive ?? true,
         joinDate: new GameTime(new Date(amplifyPlayer.joinDate || Date.now())),
       }
     );
