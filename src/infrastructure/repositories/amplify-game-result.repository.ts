@@ -29,15 +29,14 @@ export class AmplifyGameResultRepository implements IGameResultRepository {
       
       if (existing) {
         // Update existing game result
-        const result = await this.client.models.Result.update({
+        const result = await this.client.models.TournamentPlayer.update({
           id: gameResult.id,
           tournamentId: gameResult.tournamentId,
           playerId: gameResult.player.id,
-          position: gameResult.position.value,
+          finalPosition: gameResult.position.value,
           points: gameResult.points.value,
-          gameTime: gameResult.gameTime.toISOString(),
-          bountyCount: gameResult.bountyCount,
-          isConsolation: gameResult.isConsolation,
+          bountyPoints: gameResult.bountyCount,
+          consolationPoints: gameResult.isConsolation ? gameResult.points.value : 0,
           notes: gameResult.notes || null,
         });
 
@@ -48,15 +47,13 @@ export class AmplifyGameResultRepository implements IGameResultRepository {
         return this.mapToGameResult(result.data);
       } else {
         // Create new game result
-        const result = await this.client.models.Result.create({
-          id: gameResult.id,
+        const result = await this.client.models.TournamentPlayer.create({
           tournamentId: gameResult.tournamentId,
           playerId: gameResult.player.id,
-          position: gameResult.position.value,
+          finalPosition: gameResult.position.value,
           points: gameResult.points.value,
-          gameTime: gameResult.gameTime.toISOString(),
-          bountyCount: gameResult.bountyCount,
-          isConsolation: gameResult.isConsolation,
+          bountyPoints: gameResult.bountyCount,
+          consolationPoints: gameResult.isConsolation ? gameResult.points.value : 0,
           notes: gameResult.notes || null,
         });
 
@@ -76,7 +73,7 @@ export class AmplifyGameResultRepository implements IGameResultRepository {
    */
   async findById(id: string): Promise<GameResult | null> {
     try {
-      const result = await this.client.models.Result.get({ id });
+      const result = await this.client.models.TournamentPlayer.get({ id });
       
       if (!result.data) {
         return null;
@@ -118,7 +115,7 @@ export class AmplifyGameResultRepository implements IGameResultRepository {
       const pageSize = criteria.pageSize || 20;
       const page = criteria.page || 1;
       
-      const result = await this.client.models.Result.list({
+      const result = await this.client.models.TournamentPlayer.list({
         filter: Object.keys(filter).length > 0 ? filter : undefined,
         limit: pageSize,
         // Note: Amplify pagination works differently, this is a simplified implementation
@@ -176,7 +173,7 @@ export class AmplifyGameResultRepository implements IGameResultRepository {
    */
   async findByTournamentId(tournamentId: string): Promise<GameResult[]> {
     try {
-      const result = await this.client.models.Result.list({
+      const result = await this.client.models.TournamentPlayer.list({
         filter: { tournamentId: { eq: tournamentId } }
       });
 
@@ -191,7 +188,7 @@ export class AmplifyGameResultRepository implements IGameResultRepository {
    */
   async findByPlayerId(playerId: string): Promise<GameResult[]> {
     try {
-      const result = await this.client.models.Result.list({
+      const result = await this.client.models.TournamentPlayer.list({
         filter: { playerId: { eq: playerId } }
       });
 
@@ -206,7 +203,7 @@ export class AmplifyGameResultRepository implements IGameResultRepository {
    */
   async findByPlayerAndTournament(playerId: string, tournamentId: string): Promise<GameResult[]> {
     try {
-      const result = await this.client.models.Result.list({
+      const result = await this.client.models.TournamentPlayer.list({
         filter: { 
           and: [
             { playerId: { eq: playerId } },
@@ -238,7 +235,7 @@ export class AmplifyGameResultRepository implements IGameResultRepository {
    */
   async delete(id: string): Promise<void> {
     try {
-      const result = await this.client.models.Result.delete({ id });
+      const result = await this.client.models.TournamentPlayer.delete({ id });
       
       if (!result.data) {
         throw new Error('Failed to delete game result');
@@ -268,7 +265,7 @@ export class AmplifyGameResultRepository implements IGameResultRepository {
         filter.position = { le: criteria.maxPosition };
       }
 
-      const result = await this.client.models.Result.list({
+      const result = await this.client.models.TournamentPlayer.list({
         filter: Object.keys(filter).length > 0 ? filter : undefined,
       });
 
