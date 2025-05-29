@@ -5,7 +5,9 @@ import { GameTime } from '@/src/core/domain/value-objects/game-time';
 import {
   IPlayerRepository,
   PlayerSearchCriteria,
-  PlayerSearchResult
+  PlayerSearchResult,
+  PlayerProfile,
+  PlayerListItem
 } from '@/src/core/domain/repositories/player.repository';
 
 /**
@@ -208,6 +210,95 @@ export class AmplifyPlayerRepository implements IPlayerRepository {
       return result.data?.length || 0;
     } catch (error) {
       throw new Error(`Failed to count players: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Get detailed player profile with stats and history
+   */
+  async getPlayerProfile(playerId: string): Promise<PlayerProfile | null> {
+    try {
+      const player = await this.findById(playerId);
+      if (!player) {
+        return null;
+      }
+
+      // TODO: Implement actual queries for tournament results, series scoreboards, and qualifications
+      // For now, returning mock data structure
+      return {
+        player: {
+          id: player.id,
+          name: player.name,
+          email: player.email,
+          phone: player.phone,
+          joinDate: player.joinDate.toISOString(),
+          isActive: player.isActive,
+          profileImageUrl: player.profileImageUrl,
+          notes: player.notes,
+          preferredGameTypes: [],
+        },
+        stats: {
+          totalTournaments: 0,
+          totalWins: 0,
+          totalPoints: 0,
+          bestFinish: 0,
+          regularPoints: 0,
+          bountyPoints: 0,
+          consolationPoints: 0,
+          bountyCount: 0,
+          consolationCount: 0,
+        },
+        tournamentResults: [],
+        seriesScoreboards: [],
+        qualifications: [],
+      };
+    } catch (error) {
+      throw new Error(`Failed to get player profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Get players list with pagination and search
+   */
+  async getPlayersList(searchTerm?: string, page = 1, pageSize = 20): Promise<{
+    players: PlayerListItem[];
+    totalPages: number;
+    currentPage: number;
+    totalItems: number;
+  }> {
+    try {
+      const filter: any = {};
+      
+      if (searchTerm) {
+        filter.name = { contains: searchTerm };
+      }
+
+      const result = await this.client.models.Player.list({
+        filter: Object.keys(filter).length > 0 ? filter : undefined,
+        limit: pageSize,
+      });
+
+      const players = result.data?.map(data => ({
+        id: data.id,
+        name: data.name,
+        joinedDate: data.createdAt || new Date().toISOString(),
+        tournamentCount: 0, // TODO: Calculate from actual tournament data
+        bestFinish: 0, // TODO: Calculate from actual tournament data
+        totalPoints: 0, // TODO: Calculate from actual tournament data
+        isActive: data.isActive ?? true,
+      })) || [];
+
+      const totalItems = players.length;
+      const totalPages = Math.ceil(totalItems / pageSize);
+
+      return {
+        players,
+        totalPages,
+        currentPage: page,
+        totalItems,
+      };
+    } catch (error) {
+      throw new Error(`Failed to get players list: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
