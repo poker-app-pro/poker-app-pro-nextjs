@@ -1,66 +1,75 @@
 import { AmplifyPlayerRepository } from '../amplify-player.repository';
 import { Player } from '../../../core/domain/entities/player';
-import { GameTime } from '../../../core/domain/value-objects/game-time';
 import { PlayerSearchCriteria } from '../../../core/domain/repositories/player.repository';
+import { generateClient } from 'aws-amplify/data';
 
-// Mock the Amplify client
+// Mock AWS Amplify data
 jest.mock('aws-amplify/data', () => ({
-  generateClient: jest.fn(() => ({
-    models: {
-      Player: {
-        create: jest.fn(),
-        update: jest.fn(),
-        get: jest.fn(),
-        list: jest.fn(),
-        delete: jest.fn(),
-      }
-    }
-  }))
+  generateClient: jest.fn(),
 }));
+
+const mockGenerateClient = generateClient as jest.Mock;
+
+// Mock the data client
+const mockClient = {
+  models: {
+    Player: {
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      get: jest.fn(),
+      list: jest.fn(),
+    },
+  },
+};
 
 describe('AmplifyPlayerRepository', () => {
   let repository: AmplifyPlayerRepository;
-  let mockClient: any;
 
   beforeEach(() => {
-    // Reset all mocks
     jest.clearAllMocks();
-    
+    mockGenerateClient.mockReturnValue(mockClient);
     repository = new AmplifyPlayerRepository();
-    mockClient = (repository as any).client;
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
   });
 
   describe('save', () => {
     it('should create a new player when player does not exist', async () => {
       // Arrange
-      const player = Player.create(
-        'player-1',
-        'John Doe',
-        {
-          email: 'john@example.com',
-          isActive: true,
-          joinDate: new GameTime(new Date('2024-01-01')),
-        }
-      );
+      const player = Player.create('player-1', 'John Doe', {
+        email: 'john@example.com',
+        isActive: true,
+      });
+
+      const mockAmplifyPlayer = {
+        id: 'player-1',
+        name: 'John Doe',
+        email: 'john@example.com',
+        isActive: true,
+        joinDate: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
       mockClient.models.Player.get.mockResolvedValue({ data: null });
-      mockClient.models.Player.create.mockResolvedValue({
-        data: {
-          id: 'player-1',
-          name: 'John Doe',
-          email: 'john@example.com',
-          phone: null,
-          profileImageUrl: null,
-          notes: null,
-          isActive: true,
-          joinDate: '2024-01-01T00:00:00.000Z',
-        }
-      });
+      mockClient.models.Player.create.mockResolvedValue({ data: mockAmplifyPlayer });
 
       // Act
       const result = await repository.save(player);
 
       // Assert
+      expect(result).toBeInstanceOf(Player);
+      expect(result.id).toBe('player-1');
+      expect(result.name).toBe('John Doe');
+      expect(result.email).toBe('john@example.com');
+      expect(mockClient.models.Player.get).toHaveBeenCalledWith({ id: 'player-1' });
       expect(mockClient.models.Player.create).toHaveBeenCalledWith({
         id: 'player-1',
         name: 'John Doe',
@@ -70,100 +79,85 @@ describe('AmplifyPlayerRepository', () => {
         profileImageUrl: null,
         notes: null,
         isActive: true,
-        joinDate: player.joinDate.toISOString(),
+        joinDate: expect.any(String),
       });
-      expect(result).toBeInstanceOf(Player);
-      expect(result.id).toBe('player-1');
-      expect(result.name).toBe('John Doe');
     });
 
-    it('should update an existing player', async () => {
+    it('should update an existing player when player exists', async () => {
       // Arrange
-      const existingPlayerData = {
+      const player = Player.create('player-1', 'John Doe Updated', {
+        email: 'john.updated@example.com',
+        isActive: false,
+      });
+
+      const existingPlayer = {
         id: 'player-1',
         name: 'John Doe',
         email: 'john@example.com',
-        phone: null,
-        profileImageUrl: null,
-        notes: null,
         isActive: true,
-        joinDate: '2024-01-01T00:00:00.000Z',
       };
 
-      const updatedPlayer = Player.create(
-        'player-1',
-        'John Smith',
-        {
-          email: 'johnsmith@example.com',
-          isActive: true,
-          joinDate: new GameTime(new Date('2024-01-01')),
-        }
-      );
+      const updatedPlayer = {
+        id: 'player-1',
+        name: 'John Doe Updated',
+        email: 'john.updated@example.com',
+        isActive: false,
+        joinDate: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-      mockClient.models.Player.get
-        .mockResolvedValueOnce({ data: existingPlayerData })
-        .mockResolvedValueOnce({ data: existingPlayerData });
-      
-      mockClient.models.Player.update.mockResolvedValue({
-        data: {
-          ...existingPlayerData,
-          name: 'John Smith',
-          email: 'johnsmith@example.com',
-        }
-      });
+      mockClient.models.Player.get.mockResolvedValue({ data: existingPlayer });
+      mockClient.models.Player.update.mockResolvedValue({ data: updatedPlayer });
 
       // Act
-      const result = await repository.save(updatedPlayer);
+      const result = await repository.save(player);
 
       // Assert
+      expect(result).toBeInstanceOf(Player);
+      expect(result.name).toBe('John Doe Updated');
+      expect(result.email).toBe('john.updated@example.com');
+      expect(result.isActive).toBe(false);
       expect(mockClient.models.Player.update).toHaveBeenCalledWith({
         id: 'player-1',
-        name: 'John Smith',
+        name: 'John Doe Updated',
         userId: 'system',
-        email: 'johnsmith@example.com',
+        email: 'john.updated@example.com',
         phone: null,
         profileImageUrl: null,
         notes: null,
-        isActive: true,
-        joinDate: updatedPlayer.joinDate.toISOString(),
+        isActive: false,
+        joinDate: expect.any(String),
       });
-      expect(result).toBeInstanceOf(Player);
     });
 
-    it('should throw error when create fails', async () => {
+    it('should handle save errors', async () => {
       // Arrange
-      const player = Player.create(
-        'player-1',
-        'John Doe',
-        {
-          isActive: true,
-          joinDate: new GameTime(new Date()),
-        }
-      );
-
-      mockClient.models.Player.get.mockResolvedValue({ data: null });
-      mockClient.models.Player.create.mockResolvedValue({ data: null });
+      const player = Player.create('player-1', 'John Doe');
+      mockClient.models.Player.get.mockRejectedValue(new Error('Database error'));
 
       // Act & Assert
-      await expect(repository.save(player)).rejects.toThrow('Failed to create player');
+      await expect(repository.save(player)).rejects.toThrow('Failed to save player: Database error');
     });
   });
 
   describe('findById', () => {
-    it('should return player when found', async () => {
+    it('should find a player by ID successfully', async () => {
       // Arrange
-      const playerData = {
+      const mockAmplifyPlayer = {
         id: 'player-1',
         name: 'John Doe',
         email: 'john@example.com',
-        phone: null,
-        profileImageUrl: null,
-        notes: null,
+        phone: '+1234567890',
         isActive: true,
-        joinDate: '2024-01-01T00:00:00.000Z',
+        joinDate: '2024-01-15T10:00:00Z',
+        profileImageUrl: 'https://example.com/avatar.jpg',
+        notes: 'Good player',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
-      mockClient.models.Player.get.mockResolvedValue({ data: playerData });
+      mockClient.models.Player.get.mockResolvedValue({ data: mockAmplifyPlayer });
 
       // Act
       const result = await repository.findById('player-1');
@@ -173,58 +167,61 @@ describe('AmplifyPlayerRepository', () => {
       expect(result?.id).toBe('player-1');
       expect(result?.name).toBe('John Doe');
       expect(result?.email).toBe('john@example.com');
+      expect(result?.phone).toBe('+1234567890');
+      expect(result?.isActive).toBe(true);
+      expect(result?.profileImageUrl).toBe('https://example.com/avatar.jpg');
+      expect(result?.notes).toBe('Good player');
+      expect(mockClient.models.Player.get).toHaveBeenCalledWith({ id: 'player-1' });
     });
 
-    it('should return null when player not found', async () => {
+    it('should return null when player is not found', async () => {
       // Arrange
       mockClient.models.Player.get.mockResolvedValue({ data: null });
 
       // Act
-      const result = await repository.findById('non-existent');
+      const result = await repository.findById('player-1');
 
       // Assert
       expect(result).toBeNull();
     });
 
-    it('should throw error when get fails', async () => {
+    it('should handle find errors', async () => {
       // Arrange
-      mockClient.models.Player.get.mockRejectedValue(new Error('Database error'));
+      mockClient.models.Player.get.mockRejectedValue(new Error('Find failed'));
 
       // Act & Assert
-      await expect(repository.findById('player-1')).rejects.toThrow('Failed to find player by ID');
+      await expect(repository.findById('player-1')).rejects.toThrow('Failed to find player by ID: Find failed');
     });
   });
 
   describe('findMany', () => {
-    it('should return paginated results with filters', async () => {
+    it('should find players with search criteria', async () => {
       // Arrange
-      const playersData = [
+      const mockAmplifyPlayers = [
         {
           id: 'player-1',
           name: 'John Doe',
           email: 'john@example.com',
-          phone: null,
-          profileImageUrl: null,
-          notes: null,
           isActive: true,
-          joinDate: '2024-01-01T00:00:00.000Z',
+          joinDate: '2024-01-15T10:00:00Z',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         },
         {
           id: 'player-2',
           name: 'Jane Smith',
           email: 'jane@example.com',
-          phone: null,
-          profileImageUrl: null,
-          notes: null,
           isActive: true,
-          joinDate: '2024-01-02T00:00:00.000Z',
-        }
+          joinDate: '2024-01-10T10:00:00Z',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
       ];
 
-      mockClient.models.Player.list.mockResolvedValue({ data: playersData });
+      mockClient.models.Player.list.mockResolvedValue({ data: mockAmplifyPlayers });
 
       const criteria: PlayerSearchCriteria = {
-        query: 'john',
+        query: 'John',
         isActive: true,
         page: 1,
         pageSize: 10,
@@ -237,19 +234,27 @@ describe('AmplifyPlayerRepository', () => {
 
       // Assert
       expect(result.players).toHaveLength(2);
+      expect(result.players[0]).toBeInstanceOf(Player);
       expect(result.total).toBe(2);
       expect(result.page).toBe(1);
       expect(result.pageSize).toBe(10);
       expect(result.totalPages).toBe(1);
-      expect(result.players[0]).toBeInstanceOf(Player);
+      expect(mockClient.models.Player.list).toHaveBeenCalledWith({
+        filter: {
+          and: [
+            { name: { contains: 'John' } },
+            { isActive: { eq: true } },
+          ],
+        },
+      });
     });
 
-    it('should return empty results when no players found', async () => {
+    it('should handle empty search results', async () => {
       // Arrange
       mockClient.models.Player.list.mockResolvedValue({ data: null });
 
       const criteria: PlayerSearchCriteria = {
-        query: 'nonexistent',
+        query: 'NonExistent',
       };
 
       // Act
@@ -258,54 +263,127 @@ describe('AmplifyPlayerRepository', () => {
       // Assert
       expect(result.players).toHaveLength(0);
       expect(result.total).toBe(0);
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(20);
+      expect(result.totalPages).toBe(0);
+    });
+
+    it('should apply pagination correctly', async () => {
+      // Arrange
+      const mockAmplifyPlayers = Array.from({ length: 25 }, (_, i) => ({
+        id: `player-${i + 1}`,
+        name: `Player ${i + 1}`,
+        email: `player${i + 1}@example.com`,
+        isActive: true,
+        joinDate: '2024-01-15T10:00:00Z',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+
+      mockClient.models.Player.list.mockResolvedValue({ data: mockAmplifyPlayers });
+
+      const criteria: PlayerSearchCriteria = {
+        page: 2,
+        pageSize: 10,
+      };
+
+      // Act
+      const result = await repository.findMany(criteria);
+
+      // Assert
+      expect(result.players).toHaveLength(10);
+      expect(result.total).toBe(25);
+      expect(result.page).toBe(2);
+      expect(result.pageSize).toBe(10);
+      expect(result.totalPages).toBe(3);
+      expect(result.players[0].id).toBe('player-11');
+    });
+
+    it('should handle search errors', async () => {
+      // Arrange
+      mockClient.models.Player.list.mockRejectedValue(new Error('Search failed'));
+
+      const criteria: PlayerSearchCriteria = {
+        query: 'John',
+      };
+
+      // Act & Assert
+      await expect(repository.findMany(criteria)).rejects.toThrow('Failed to search players: Search failed');
     });
   });
 
   describe('findAllActive', () => {
-    it('should return all active players', async () => {
+    it('should find all active players successfully', async () => {
       // Arrange
-      const playersData = [
+      const mockAmplifyPlayers = [
         {
           id: 'player-1',
           name: 'John Doe',
           email: 'john@example.com',
-          phone: null,
-          profileImageUrl: null,
-          notes: null,
           isActive: true,
-          joinDate: '2024-01-01T00:00:00.000Z',
-        }
+          joinDate: '2024-01-15T10:00:00Z',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        {
+          id: 'player-2',
+          name: 'Jane Smith',
+          email: 'jane@example.com',
+          isActive: true,
+          joinDate: '2024-01-10T10:00:00Z',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
       ];
 
-      mockClient.models.Player.list.mockResolvedValue({ data: playersData });
+      mockClient.models.Player.list.mockResolvedValue({ data: mockAmplifyPlayers });
 
       // Act
       const result = await repository.findAllActive();
 
       // Assert
-      expect(mockClient.models.Player.list).toHaveBeenCalledWith({
-        filter: { isActive: { eq: true } }
-      });
-      expect(result).toHaveLength(1);
+      expect(result).toHaveLength(2);
       expect(result[0]).toBeInstanceOf(Player);
+      expect(result[0].isActive).toBe(true);
+      expect(result[1]).toBeInstanceOf(Player);
+      expect(result[1].isActive).toBe(true);
+      expect(mockClient.models.Player.list).toHaveBeenCalledWith({
+        filter: { isActive: { eq: true } },
+      });
+    });
+
+    it('should handle empty results', async () => {
+      // Arrange
+      mockClient.models.Player.list.mockResolvedValue({ data: null });
+
+      // Act
+      const result = await repository.findAllActive();
+
+      // Assert
+      expect(result).toHaveLength(0);
+    });
+
+    it('should handle find active errors', async () => {
+      // Arrange
+      mockClient.models.Player.list.mockRejectedValue(new Error('Find active failed'));
+
+      // Act & Assert
+      await expect(repository.findAllActive()).rejects.toThrow('Failed to find active players: Find active failed');
     });
   });
 
   describe('exists', () => {
     it('should return true when player exists', async () => {
       // Arrange
-      const playerData = {
+      const mockAmplifyPlayer = {
         id: 'player-1',
         name: 'John Doe',
         email: 'john@example.com',
-        phone: null,
-        profileImageUrl: null,
-        notes: null,
         isActive: true,
-        joinDate: '2024-01-01T00:00:00.000Z',
+        joinDate: '2024-01-15T10:00:00Z',
       };
 
-      mockClient.models.Player.get.mockResolvedValue({ data: playerData });
+      mockClient.models.Player.get.mockResolvedValue({ data: mockAmplifyPlayer });
 
       // Act
       const result = await repository.exists('player-1');
@@ -319,15 +397,15 @@ describe('AmplifyPlayerRepository', () => {
       mockClient.models.Player.get.mockResolvedValue({ data: null });
 
       // Act
-      const result = await repository.exists('non-existent');
+      const result = await repository.exists('player-1');
 
       // Assert
       expect(result).toBe(false);
     });
 
-    it('should return false when error occurs', async () => {
+    it('should return false when get operation fails', async () => {
       // Arrange
-      mockClient.models.Player.get.mockRejectedValue(new Error('Database error'));
+      mockClient.models.Player.get.mockRejectedValue(new Error('Get failed'));
 
       // Act
       const result = await repository.exists('player-1');
@@ -338,11 +416,9 @@ describe('AmplifyPlayerRepository', () => {
   });
 
   describe('delete', () => {
-    it('should delete player successfully', async () => {
+    it('should delete a player successfully', async () => {
       // Arrange
-      mockClient.models.Player.delete.mockResolvedValue({
-        data: { id: 'player-1' }
-      });
+      mockClient.models.Player.delete.mockResolvedValue({ data: { id: 'player-1' } });
 
       // Act
       await repository.delete('player-1');
@@ -351,33 +427,43 @@ describe('AmplifyPlayerRepository', () => {
       expect(mockClient.models.Player.delete).toHaveBeenCalledWith({ id: 'player-1' });
     });
 
-    it('should throw error when delete fails', async () => {
+    it('should handle deletion errors', async () => {
+      // Arrange
+      mockClient.models.Player.delete.mockRejectedValue(new Error('Deletion failed'));
+
+      // Act & Assert
+      await expect(repository.delete('player-1')).rejects.toThrow('Failed to delete player: Deletion failed');
+    });
+
+    it('should handle case when player is not found for deletion', async () => {
       // Arrange
       mockClient.models.Player.delete.mockResolvedValue({ data: null });
 
       // Act & Assert
-      await expect(repository.delete('player-1')).rejects.toThrow('Player not found or already deleted');
+      await expect(repository.delete('player-1')).rejects.toThrow('Failed to delete player: Player not found or already deleted');
     });
   });
 
   describe('count', () => {
-    it('should return total count of players', async () => {
+    it('should count players successfully', async () => {
       // Arrange
-      const playersData = [
-        { id: 'player-1', name: 'John' },
-        { id: 'player-2', name: 'Jane' }
+      const mockAmplifyPlayers = [
+        { id: 'player-1', name: 'John Doe' },
+        { id: 'player-2', name: 'Jane Smith' },
+        { id: 'player-3', name: 'Bob Johnson' },
       ];
 
-      mockClient.models.Player.list.mockResolvedValue({ data: playersData });
+      mockClient.models.Player.list.mockResolvedValue({ data: mockAmplifyPlayers });
 
       // Act
       const result = await repository.count();
 
       // Assert
-      expect(result).toBe(2);
+      expect(result).toBe(3);
+      expect(mockClient.models.Player.list).toHaveBeenCalledTimes(1);
     });
 
-    it('should return 0 when no players found', async () => {
+    it('should return 0 when no players exist', async () => {
       // Arrange
       mockClient.models.Player.list.mockResolvedValue({ data: null });
 
@@ -386,6 +472,14 @@ describe('AmplifyPlayerRepository', () => {
 
       // Assert
       expect(result).toBe(0);
+    });
+
+    it('should handle count errors', async () => {
+      // Arrange
+      mockClient.models.Player.list.mockRejectedValue(new Error('Count failed'));
+
+      // Act & Assert
+      await expect(repository.count()).rejects.toThrow('Failed to count players: Count failed');
     });
   });
 });

@@ -14,6 +14,11 @@ import { CalculatePointsUseCase } from '../../core/application/use-cases/game-re
 import { IAuthService, AmplifyAuthService } from '../services/amplify-auth.service';
 import { IAmplifyClientService, AmplifyClientService } from '../services/amplify-client.service';
 
+// Facade imports
+import { ISeriesFacade } from '../../application-facade/interfaces/ISeriesFacade';
+import { ILeagueFacade } from '../../application-facade/interfaces/ILeagueFacade';
+import { SeriesFacade, LeagueFacade } from '../../application-facade/implementations';
+
 /**
  * Dependency Injection Container
  * Manages the creation and lifecycle of dependencies
@@ -29,6 +34,10 @@ export class DIContainer {
   // Service instances
   private _authService: IAuthService | null = null;
   private _amplifyClientService: IAmplifyClientService | null = null;
+  
+  // Facade instances
+  private _seriesFacade: ISeriesFacade | null = null;
+  private _leagueFacade: ILeagueFacade | null = null;
   
   // Use case instances
   private _createPlayerUseCase: CreatePlayerUseCase | null = null;
@@ -91,6 +100,30 @@ export class DIContainer {
   }
 
   /**
+   * Facade Getters
+   */
+  get seriesFacade(): ISeriesFacade {
+    if (!this._seriesFacade) {
+      this._seriesFacade = new SeriesFacade(
+        this.seriesRepository,
+        this.authService
+      );
+    }
+    return this._seriesFacade;
+  }
+
+  get leagueFacade(): ILeagueFacade {
+    if (!this._leagueFacade) {
+      // Note: We'll need to add league repository when it's implemented
+      this._leagueFacade = new LeagueFacade(
+        {} as any, // TODO: Replace with actual league repository
+        this.authService
+      );
+    }
+    return this._leagueFacade;
+  }
+
+  /**
    * Use Case Getters
    */
   get createPlayerUseCase(): CreatePlayerUseCase {
@@ -140,6 +173,8 @@ export class DIContainer {
     this._seriesRepository = null;
     this._authService = null;
     this._amplifyClientService = null;
+    this._seriesFacade = null;
+    this._leagueFacade = null;
     this._createPlayerUseCase = null;
     this._updatePlayerUseCase = null;
     this._searchPlayersUseCase = null;
@@ -167,14 +202,30 @@ export class DIContainer {
 
   setSeriesRepository(repository: ISeriesRepository): void {
     this._seriesRepository = repository;
+    // Reset dependent facades
+    this._seriesFacade = null;
   }
 
   setAuthService(service: IAuthService): void {
     this._authService = service;
+    // Reset dependent facades
+    this._seriesFacade = null;
+    this._leagueFacade = null;
   }
 
   setAmplifyClientService(service: IAmplifyClientService): void {
     this._amplifyClientService = service;
+  }
+
+  /**
+   * Override facades (useful for testing with mocks)
+   */
+  setSeriesFacade(facade: ISeriesFacade): void {
+    this._seriesFacade = facade;
+  }
+
+  setLeagueFacade(facade: ILeagueFacade): void {
+    this._leagueFacade = facade;
   }
 }
 
