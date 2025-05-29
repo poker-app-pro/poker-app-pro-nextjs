@@ -6,7 +6,6 @@ export interface UpdateLeagueRequest {
   name: string;
   description?: string;
   isActive: boolean;
-  imageUrl?: string;
   userId: string;
 }
 
@@ -26,29 +25,32 @@ export class UpdateLeagueUseCase {
         return { success: false, error: "League name is required" };
       }
 
+      if (!request.userId) {
+        return { success: false, error: "User ID is required" };
+      }
+
       // Get existing league
       const existingLeague = await this.leagueRepository.findById(request.id);
       if (!existingLeague) {
         return { success: false, error: "League not found" };
       }
 
-      // Update the league
-      const updatedLeague = new League(
-        request.id,
-        request.name,
-        request.description || '',
-        request.isActive,
-        request.imageUrl || '',
-        request.userId,
-        existingLeague.seasons,
-        existingLeague.series,
-        existingLeague.tournaments,
-        existingLeague.scoreboards,
-        existingLeague.qualifications,
-        existingLeague.leagueSettings
-      );
+      // Check if user is the owner of the league
+      if (!existingLeague.isOwnedBy(request.userId)) {
+        return { success: false, error: "You don't have permission to update this league" };
+      }
 
-      const savedLeague = await this.leagueRepository.update(updatedLeague);
+      // Update the league using entity methods
+      existingLeague.updateName(request.name);
+      existingLeague.updateDescription(request.description);
+      
+      if (request.isActive && !existingLeague.isActive) {
+        existingLeague.activate();
+      } else if (!request.isActive && existingLeague.isActive) {
+        existingLeague.deactivate();
+      }
+
+      const savedLeague = await this.leagueRepository.update(existingLeague);
 
       return { success: true, data: savedLeague };
     } catch (error) {

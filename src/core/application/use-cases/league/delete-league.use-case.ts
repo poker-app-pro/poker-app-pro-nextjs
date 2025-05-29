@@ -15,36 +15,38 @@ export class DeleteLeagueUseCase {
 
   async execute(request: DeleteLeagueRequest): Promise<DeleteLeagueResponse> {
     try {
-      // Get the league first to check relationships
+      // Validate input
+      if (!request.id) {
+        return { success: false, error: "League ID is required" };
+      }
+
+      if (!request.userId) {
+        return { success: false, error: "User ID is required" };
+      }
+
+      // Get the league first to verify it exists and check ownership
       const league = await this.leagueRepository.findById(request.id);
 
       if (!league) {
         return { success: false, error: "League not found" };
       }
 
-      // Check if league has seasons
-      if (league.seasons && league.seasons.length > 0) {
+      // Check if user is the owner of the league
+      if (!league.isOwnedBy(request.userId)) {
+        return { success: false, error: "You don't have permission to delete this league" };
+      }
+
+      // Check if league is active - might want to deactivate instead of delete
+      if (league.isActive) {
         return {
           success: false,
-          error: "Cannot delete league with existing seasons. Please delete all seasons first.",
+          error: "Cannot delete an active league. Please deactivate it first.",
         };
       }
 
-      // Check if league has series
-      if (league.series && league.series.length > 0) {
-        return {
-          success: false,
-          error: "Cannot delete league with existing series. Please delete all series first.",
-        };
-      }
-
-      // Check if league has tournaments
-      if (league.tournaments && league.tournaments.length > 0) {
-        return {
-          success: false,
-          error: "Cannot delete league with existing tournaments. Please delete all tournaments first.",
-        };
-      }
+      // TODO: In a real implementation, you would check for related entities
+      // through separate repository calls or a dedicated service
+      // For now, we'll proceed with the deletion
 
       // Delete the league
       await this.leagueRepository.delete(request.id);

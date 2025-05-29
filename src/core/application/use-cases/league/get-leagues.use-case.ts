@@ -16,7 +16,9 @@ export class GetLeaguesUseCase {
 
   async execute(request: GetLeaguesRequest = {}): Promise<GetLeaguesResponse> {
     try {
-      const leagues = await this.leagueRepository.findAll(request.activeOnly);
+      const leagues = request.activeOnly 
+        ? await this.leagueRepository.findActive()
+        : await this.leagueRepository.findAll();
       return { success: true, data: leagues };
     } catch (error) {
       console.error("Error fetching leagues:", error);
