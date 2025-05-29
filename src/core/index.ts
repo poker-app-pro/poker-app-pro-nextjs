@@ -4,7 +4,7 @@
  */
 
 // Domain Layer
-export * from './domain';
+export * from '@/src/core/domain';
 
 // Application Layer
-export * from './application';
+export * from '@/src/core/application';

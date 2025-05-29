@@ -1,6 +1,6 @@
 import { Scoreboard } from '../scoreboard';
-import { GameTime } from '../../value-objects/game-time';
-import { Points } from '../../value-objects/points';
+import { GameTime } from '@/src/core/domain/value-objects/game-time';
+import { Points } from '@/src/core/domain/value-objects/points';
 
 describe('Scoreboard Entity', () => {
   const validId = 'scoreboard-123';

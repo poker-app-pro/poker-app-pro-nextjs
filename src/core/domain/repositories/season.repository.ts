@@ -1,4 +1,4 @@
-import { Season } from '../entities/season';
+import { Season } from '@/src/core/domain/entities/season';
 
 /**
  * Season Repository Interface

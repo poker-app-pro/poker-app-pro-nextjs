@@ -1,258 +1,213 @@
+import type { Schema } from '@/amplify/data/resource';
+import { GameResult } from '@/src/core/domain/entities/game-result';
+import { Player } from '@/src/core/domain/entities/player';
+import { Position } from '@/src/core/domain/value-objects/position';
+import { Points } from '@/src/core/domain/value-objects/points';
+import { GameTime } from '@/src/core/domain/value-objects/game-time';
+import {
+  IGameResultRepository,
+  GameResultSearchCriteria,
+  GameResultSearchResult,
+  PlayerStats
+} from '@/src/core/domain/repositories/game-result.repository';
 import { generateClient } from 'aws-amplify/data';
-import type { Schema } from '../../../amplify/data/resource';
-import { GameResult } from '../../core/domain/entities/game-result';
-import { Player } from '../../core/domain/entities/player';
-import { Position } from '../../core/domain/value-objects/position';
-import { Points } from '../../core/domain/value-objects/points';
-import { GameTime } from '../../core/domain/value-objects/game-time';
-import { 
-  IGameResultRepository, 
-  GameResultSearchCriteria, 
-  GameResultSearchResult, 
-  PlayerStats 
-} from '../../core/domain/repositories/game-result.repository';
 
 /**
- * Amplify implementation of Game Result Repository
- * Connects domain layer to AWS Amplify DataStore via TournamentPlayer model
+ * Amplify implementation of the Game Result Repository
+ * Handles all game result data operations using AWS Amplify
  */
 export class AmplifyGameResultRepository implements IGameResultRepository {
   private client = generateClient<Schema>();
 
+  /**
+   * Save a game result (create or update)
+   */
   async save(gameResult: GameResult): Promise<GameResult> {
     try {
-      // Check if game result exists (update vs create)
-      const existingResult = await this.findById(gameResult.id);
+      // Check if game result exists
+      const existing = await this.findById(gameResult.id);
       
-      if (existingResult) {
+      if (existing) {
         // Update existing game result
-        const { data: updatedResult } = await this.client.models.TournamentPlayer.update({
+        const result = await this.client.models.Result.update({
           id: gameResult.id,
           tournamentId: gameResult.tournamentId,
           playerId: gameResult.player.id,
-          finalPosition: gameResult.position.value,
+          position: gameResult.position.value,
           points: gameResult.points.value,
-          bountyPoints: gameResult.bountyCount || 0,
-          consolationPoints: gameResult.isConsolation ? gameResult.points.value : 0,
+          gameTime: gameResult.gameTime.toISOString(),
+          bountyCount: gameResult.bountyCount,
+          isConsolation: gameResult.isConsolation,
           notes: gameResult.notes || null,
-          checkedIn: true,
-          checkedInAt: gameResult.gameTime.toISOString(),
         });
 
-        if (!updatedResult) {
+        if (!result.data) {
           throw new Error('Failed to update game result');
         }
 
-        return await this.toDomainEntity(updatedResult);
+        return this.mapToGameResult(result.data);
       } else {
         // Create new game result
-        const { data: newResult } = await this.client.models.TournamentPlayer.create({
+        const result = await this.client.models.Result.create({
           id: gameResult.id,
           tournamentId: gameResult.tournamentId,
           playerId: gameResult.player.id,
-          finalPosition: gameResult.position.value,
+          position: gameResult.position.value,
           points: gameResult.points.value,
-          bountyPoints: gameResult.bountyCount || 0,
-          consolationPoints: gameResult.isConsolation ? gameResult.points.value : 0,
+          gameTime: gameResult.gameTime.toISOString(),
+          bountyCount: gameResult.bountyCount,
+          isConsolation: gameResult.isConsolation,
           notes: gameResult.notes || null,
-          checkedIn: true,
-          checkedInAt: gameResult.gameTime.toISOString(),
-          registrationDate: gameResult.gameTime.toISOString(),
         });
 
-        if (!newResult) {
+        if (!result.data) {
           throw new Error('Failed to create game result');
         }
 
-        return await this.toDomainEntity(newResult);
+        return this.mapToGameResult(result.data);
       }
     } catch (error) {
       throw new Error(`Failed to save game result: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
+  /**
+   * Find game result by ID
+   */
   async findById(id: string): Promise<GameResult | null> {
     try {
-      const { data: tournamentPlayer } = await this.client.models.TournamentPlayer.get({ id });
+      const result = await this.client.models.Result.get({ id });
       
-      if (!tournamentPlayer) {
+      if (!result.data) {
         return null;
       }
 
-      return await this.toDomainEntity(tournamentPlayer);
+      return this.mapToGameResult(result.data);
     } catch (error) {
       throw new Error(`Failed to find game result by ID: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
+  /**
+   * Find game results by criteria
+   */
   async findMany(criteria: GameResultSearchCriteria): Promise<GameResultSearchResult> {
     try {
-      // Build the query based on criteria
-      let query = this.client.models.TournamentPlayer.list();
+      const filter: any = {};
 
-      // Apply filters
-      const filters: any[] = [];
-      
+      // Build filter based on criteria
       if (criteria.tournamentId) {
-        filters.push({ tournamentId: { eq: criteria.tournamentId } });
+        filter.tournamentId = { eq: criteria.tournamentId };
       }
-
       if (criteria.playerId) {
-        filters.push({ playerId: { eq: criteria.playerId } });
+        filter.playerId = { eq: criteria.playerId };
       }
-
       if (criteria.minPosition) {
-        filters.push({ finalPosition: { ge: criteria.minPosition } });
+        filter.position = { ge: criteria.minPosition };
       }
-
       if (criteria.maxPosition) {
-        filters.push({ finalPosition: { le: criteria.maxPosition } });
+        filter.position = { le: criteria.maxPosition };
       }
-
       if (criteria.minPoints) {
-        filters.push({ points: { ge: criteria.minPoints } });
+        filter.points = { ge: criteria.minPoints };
       }
-
-      if (criteria.earnedPoints !== undefined) {
-        if (criteria.earnedPoints) {
-          filters.push({ points: { gt: 0 } });
-        } else {
-          filters.push({ points: { eq: 0 } });
-        }
-      }
-
       if (criteria.isConsolation !== undefined) {
-        if (criteria.isConsolation) {
-          filters.push({ consolationPoints: { gt: 0 } });
-        } else {
-          filters.push({ consolationPoints: { eq: 0 } });
-        }
+        filter.isConsolation = { eq: criteria.isConsolation };
       }
 
-      // Apply filters if any exist
-      if (filters.length > 0) {
-        query = this.client.models.TournamentPlayer.list({
-          filter: filters.length === 1 ? filters[0] : { and: filters }
-        });
+      const pageSize = criteria.pageSize || 20;
+      const page = criteria.page || 1;
+      
+      const result = await this.client.models.Result.list({
+        filter: Object.keys(filter).length > 0 ? filter : undefined,
+        limit: pageSize,
+        // Note: Amplify pagination works differently, this is a simplified implementation
+      });
+
+      const gameResults = result.data?.map((data: any) => this.mapToGameResult(data)) || [];
+      
+      // Apply client-side filtering for date ranges if needed
+      let filteredResults = gameResults;
+      if (criteria.gameTimeAfter) {
+        const afterDate = new GameTime(criteria.gameTimeAfter);
+        filteredResults = filteredResults.filter((gr: GameResult) => gr.gameTime.isAfter(afterDate) || gr.gameTime.equals(afterDate));
       }
-
-      const { data: tournamentPlayers } = await query;
-
-      if (!tournamentPlayers) {
-        return {
-          results: [],
-          total: 0,
-          page: criteria.page || 1,
-          pageSize: criteria.pageSize || 20,
-          totalPages: 0,
-        };
+      if (criteria.gameTimeBefore) {
+        const beforeDate = new GameTime(criteria.gameTimeBefore);
+        filteredResults = filteredResults.filter((gr: GameResult) => gr.gameTime.isBefore(beforeDate) || gr.gameTime.equals(beforeDate));
       }
-
-      // Convert to domain entities
-      const gameResults = await Promise.all(
-        tournamentPlayers.map(tp => this.toDomainEntity(tp))
-      );
 
       // Apply sorting
       if (criteria.sortBy) {
-        gameResults.sort((a, b) => {
-          let aValue: any;
-          let bValue: any;
-
-          switch (criteria.sortBy) {
-            case 'position':
-              aValue = a.position.value;
-              bValue = b.position.value;
-              break;
-            case 'points':
-              aValue = a.points.value;
-              bValue = b.points.value;
-              break;
-            case 'gameTime':
-              aValue = a.gameTime.value.getTime();
-              bValue = b.gameTime.value.getTime();
-              break;
-            case 'totalPoints':
-              aValue = a.getTotalPoints().value;
-              bValue = b.getTotalPoints().value;
-              break;
-            default:
-              aValue = a.position.value;
-              bValue = b.position.value;
+        filteredResults.sort((a: GameResult, b: GameResult) => {
+          let comparison = 0;
+          if (criteria.sortBy === 'gameTime') {
+            comparison = a.gameTime.isBefore(b.gameTime) ? -1 : a.gameTime.isAfter(b.gameTime) ? 1 : 0;
+          } else if (criteria.sortBy === 'position') {
+            comparison = a.position.value - b.position.value;
+          } else if (criteria.sortBy === 'points' || criteria.sortBy === 'totalPoints') {
+            comparison = a.points.value - b.points.value;
           }
-
-          if (criteria.sortOrder === 'desc') {
-            return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
-          } else {
-            return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
-          }
+          return criteria.sortOrder === 'desc' ? -comparison : comparison;
         });
       }
 
+      const total = filteredResults.length;
+      const totalPages = Math.ceil(total / pageSize);
+      
       // Apply pagination
-      const page = criteria.page || 1;
-      const pageSize = criteria.pageSize || 20;
       const startIndex = (page - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedResults = gameResults.slice(startIndex, endIndex);
-      const totalPages = Math.ceil(gameResults.length / pageSize);
+      const paginatedResults = filteredResults.slice(startIndex, startIndex + pageSize);
 
       return {
         results: paginatedResults,
-        total: gameResults.length,
+        total,
         page,
         pageSize,
-        totalPages,
+        totalPages
       };
-    } catch {
-      throw new Error('Failed to search game results');
+    } catch (error) {
+      throw new Error(`Failed to find game results: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
+  /**
+   * Find all results for a specific tournament
+   */
   async findByTournamentId(tournamentId: string): Promise<GameResult[]> {
     try {
-      const { data: tournamentPlayers } = await this.client.models.TournamentPlayer.list({
+      const result = await this.client.models.Result.list({
         filter: { tournamentId: { eq: tournamentId } }
       });
 
-      if (!tournamentPlayers) {
-        return [];
-      }
-
-      const gameResults = await Promise.all(
-        tournamentPlayers.map(tp => this.toDomainEntity(tp))
-      );
-
-      return gameResults;
+      return result.data?.map((data: any) => this.mapToGameResult(data)) || [];
     } catch (error) {
       throw new Error(`Failed to find game results by tournament ID: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
+  /**
+   * Find game results by player ID
+   */
   async findByPlayerId(playerId: string): Promise<GameResult[]> {
     try {
-      const { data: tournamentPlayers } = await this.client.models.TournamentPlayer.list({
+      const result = await this.client.models.Result.list({
         filter: { playerId: { eq: playerId } }
       });
 
-      if (!tournamentPlayers) {
-        return [];
-      }
-
-      const gameResults = await Promise.all(
-        tournamentPlayers.map(tp => this.toDomainEntity(tp))
-      );
-
-      return gameResults;
+      return result.data?.map((data: any) => this.mapToGameResult(data)) || [];
     } catch (error) {
       throw new Error(`Failed to find game results by player ID: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
+  /**
+   * Find results by player and tournament
+   */
   async findByPlayerAndTournament(playerId: string, tournamentId: string): Promise<GameResult[]> {
     try {
-      const { data: tournamentPlayers } = await this.client.models.TournamentPlayer.list({
-        filter: {
+      const result = await this.client.models.Result.list({
+        filter: { 
           and: [
             { playerId: { eq: playerId } },
             { tournamentId: { eq: tournamentId } }
@@ -260,20 +215,72 @@ export class AmplifyGameResultRepository implements IGameResultRepository {
         }
       });
 
-      if (!tournamentPlayers) {
-        return [];
-      }
-
-      const gameResults = await Promise.all(
-        tournamentPlayers.map(tp => this.toDomainEntity(tp))
-      );
-
-      return gameResults;
+      return result.data?.map((data: any) => this.mapToGameResult(data)) || [];
     } catch (error) {
       throw new Error(`Failed to find game results by player and tournament: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
+  /**
+   * Check if a game result exists by ID
+   */
+  async exists(id: string): Promise<boolean> {
+    try {
+      const gameResult = await this.findById(id);
+      return gameResult !== null;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Delete a game result by ID
+   */
+  async delete(id: string): Promise<void> {
+    try {
+      const result = await this.client.models.Result.delete({ id });
+      
+      if (!result.data) {
+        throw new Error('Failed to delete game result');
+      }
+    } catch (error) {
+      throw new Error(`Failed to delete game result: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Count total game results
+   */
+  async count(criteria?: Partial<GameResultSearchCriteria>): Promise<number> {
+    try {
+      const filter: any = {};
+
+      if (criteria?.tournamentId) {
+        filter.tournamentId = { eq: criteria.tournamentId };
+      }
+      if (criteria?.playerId) {
+        filter.playerId = { eq: criteria.playerId };
+      }
+      if (criteria?.minPosition) {
+        filter.position = { ge: criteria.minPosition };
+      }
+      if (criteria?.maxPosition) {
+        filter.position = { le: criteria.maxPosition };
+      }
+
+      const result = await this.client.models.Result.list({
+        filter: Object.keys(filter).length > 0 ? filter : undefined,
+      });
+
+      return result.data?.length || 0;
+    } catch (error) {
+      throw new Error(`Failed to count game results: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Get leaderboard for a tournament
+   */
   async getLeaderboard(tournamentId: string): Promise<GameResult[]> {
     try {
       const results = await this.findByTournamentId(tournamentId);
@@ -285,6 +292,9 @@ export class AmplifyGameResultRepository implements IGameResultRepository {
     }
   }
 
+  /**
+   * Get player statistics
+   */
   async getPlayerStats(playerId: string): Promise<PlayerStats> {
     try {
       const results = await this.findByPlayerId(playerId);
@@ -305,21 +315,24 @@ export class AmplifyGameResultRepository implements IGameResultRepository {
         };
       }
 
-      const positions = results.map(r => r.position.value);
-      const points = results.map(r => r.points.value);
-      const totalBounties = results.reduce((sum, r) => sum + (r.bountyCount || 0), 0);
-      const consolationTournaments = results.filter(r => r.isConsolation).length;
-      const wins = results.filter(r => r.position.value === 1).length;
-      const topThreeFinishes = results.filter(r => r.position.value <= 3).length;
-      const pointsEarned = points.reduce((sum, p) => sum + p, 0);
+      const totalTournaments = results.length;
+      const totalPoints = results.reduce((sum, result) => sum + result.points.value, 0);
+      const averagePosition = results.reduce((sum, result) => sum + result.position.value, 0) / totalTournaments;
+      const bestPosition = Math.min(...results.map(result => result.position.value));
+      const worstPosition = Math.max(...results.map(result => result.position.value));
+      const wins = results.filter(result => result.isWinner()).length;
+      const topThreeFinishes = results.filter(result => result.isTopThree()).length;
+      const pointsEarned = results.filter(result => result.earnedPoints()).length;
+      const totalBounties = results.reduce((sum, result) => sum + result.bountyCount, 0);
+      const consolationTournaments = results.filter(result => result.isConsolation).length;
 
       return {
         playerId,
-        totalTournaments: results.length,
-        totalPoints: results.reduce((sum, r) => sum + r.getTotalPoints().value, 0),
-        averagePosition: positions.reduce((sum, p) => sum + p, 0) / positions.length,
-        bestPosition: Math.min(...positions),
-        worstPosition: Math.max(...positions),
+        totalTournaments,
+        totalPoints,
+        averagePosition,
+        bestPosition,
+        worstPosition,
         wins,
         topThreeFinishes,
         pointsEarned,
@@ -331,83 +344,35 @@ export class AmplifyGameResultRepository implements IGameResultRepository {
     }
   }
 
-  async exists(id: string): Promise<boolean> {
-    try {
-      const gameResult = await this.findById(id);
-      return gameResult !== null;
-    } catch {
-      return false;
-    }
-  }
-
-  async delete(id: string): Promise<void> {
-    try {
-      const { data: deletedResult } = await this.client.models.TournamentPlayer.delete({ id });
-      
-      if (!deletedResult) {
-        throw new Error('Game result not found or already deleted');
-      }
-    } catch (error) {
-      throw new Error(`Failed to delete game result: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  async count(criteria?: Partial<GameResultSearchCriteria>): Promise<number> {
-    try {
-      if (!criteria || Object.keys(criteria).length === 0) {
-        const { data: tournamentPlayers } = await this.client.models.TournamentPlayer.list();
-        return tournamentPlayers?.length || 0;
-      }
-
-      // Use findMany with criteria and return total count
-      const result = await this.findMany(criteria as GameResultSearchCriteria);
-      return result.total;
-    } catch (error) {
-      throw new Error(`Failed to count game results: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  private async toDomainEntity(tournamentPlayer: any): Promise<GameResult> {
-    // Get the player entity
-    const { data: playerData } = await this.client.models.Player.get({ 
-      id: tournamentPlayer.playerId 
-    });
-
-    if (!playerData) {
-      throw new Error(`Player not found for game result: ${tournamentPlayer.playerId}`);
-    }
-
-    // Create player domain entity
-    const player = Player.create(
-      playerData.id,
-      playerData.name,
+  /**
+   * Map Amplify data to GameResult domain entity
+   */
+  private mapToGameResult(data: any): GameResult {
+    // Create a simple player object - in a real implementation, you might want to fetch full player data
+    const player = new Player(
+      data.playerId,
+      data.playerName || 'Unknown Player', // You might need to join with Player table
+      new GameTime(new Date()), // Default join date
       {
-        email: playerData.email || undefined,
-        phone: playerData.phone || undefined,
-        profileImageUrl: playerData.profileImageUrl || undefined,
-        notes: playerData.notes || undefined,
-        isActive: playerData.isActive ?? true,
-        joinDate: new GameTime(new Date(playerData.joinDate || Date.now())),
+        isActive: true
       }
     );
 
-    // Create value objects
-    const position = new Position(tournamentPlayer.finalPosition || 1);
-    const points = new Points(tournamentPlayer.points || 0);
-    const gameTime = new GameTime(new Date(tournamentPlayer.checkedInAt || Date.now()));
+    const position = new Position(data.position);
+    const points = new Points(data.points);
+    const gameTime = new GameTime(new Date(data.gameTime));
 
-    // Create game result entity
-    return GameResult.create(
-      tournamentPlayer.id,
-      tournamentPlayer.tournamentId,
+    return new GameResult(
+      data.id,
+      data.tournamentId,
       player,
       position,
       points,
+      gameTime,
       {
-        gameTime,
-        bountyCount: tournamentPlayer.bountyPoints || 0,
-        isConsolation: (tournamentPlayer.consolationPoints || 0) > 0,
-        notes: tournamentPlayer.notes || undefined,
+        bountyCount: data.bountyCount || 0,
+        isConsolation: data.isConsolation || false,
+        notes: data.notes || undefined,
       }
     );
   }

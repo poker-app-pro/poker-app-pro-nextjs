@@ -1,5 +1,5 @@
-import { Position } from '../value-objects/position';
-import { Points } from '../value-objects/points';
+import { Position } from '@/src/core/domain/value-objects/position';
+import { Points } from '@/src/core/domain/value-objects/points';
 
 /**
  * Interface for scoring strategies

@@ -1,5 +1,5 @@
-import { ILeagueFacade } from '../../../../application-facade/interfaces/ILeagueFacade';
-import { CreateLeagueDTO, UpdateLeagueDTO, LeagueSearchDTO } from '../../../../core/application/dtos/league.dto';
+import { ILeagueFacade } from '@/src/application-facade/interfaces/ILeagueFacade';
+import { CreateLeagueDTO, UpdateLeagueDTO, LeagueSearchDTO } from '@/src/core/application/dtos/league.dto';
 
 /**
  * Next.js League Controller

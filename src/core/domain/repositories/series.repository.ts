@@ -1,4 +1,4 @@
-import { Series } from '../entities/series';
+import { Series } from '@/src/core/domain/entities/series';
 
 /**
  * Series Repository Interface

@@ -10,7 +10,7 @@ import {
   ScoreboardStatsDTO,
   BulkScoreboardUpdateDTO,
   ScoreboardRecalculationDTO
-} from '../../core/application/dtos/scoreboard.dto';
+} from '@/src/core/application/dtos/scoreboard.dto';
 
 /**
  * Scoreboard Facade Interface

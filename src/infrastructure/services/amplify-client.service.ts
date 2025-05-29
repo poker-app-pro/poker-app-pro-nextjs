@@ -4,8 +4,8 @@ import {
 } from "@aws-amplify/adapter-nextjs/api";
 import { cookies } from "next/headers";
 import { createServerRunner } from "@aws-amplify/adapter-nextjs";
-import amplifyConfig from "../../../amplify_outputs.json";
-import { Schema } from "../../../amplify/data/resource";
+import amplifyConfig from "@/amplify_outputs.json";
+import { Schema } from "@/amplify/data/resource";
 
 /**
  * Amplify Client Service Interface

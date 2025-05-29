@@ -10,7 +10,7 @@ import {
   QualificationStatsDTO,
   BulkQualificationDTO,
   QualificationValidationDTO
-} from '../../core/application/dtos/qualification.dto';
+} from '@/src/core/application/dtos/qualification.dto';
 
 /**
  * Qualification Facade Interface

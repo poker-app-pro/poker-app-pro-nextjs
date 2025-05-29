@@ -1,6 +1,6 @@
 import { getCurrentUser, signOut, signIn, signUp, confirmSignUp, resetPassword, confirmResetPassword } from 'aws-amplify/auth';
 import { generateClient } from 'aws-amplify/data';
-import type { Schema } from '../../../amplify/data/resource';
+import type { Schema } from '@/amplify/data/resource';
 
 /**
  * Authentication Service Interface

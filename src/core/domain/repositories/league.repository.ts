@@ -1,4 +1,4 @@
-import { League } from '../entities/league';
+import { League } from '@/src/core/domain/entities/league';
 
 /**
  * League Repository Interface

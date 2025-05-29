@@ -8,7 +8,7 @@ import {
   TournamentRegistrationDTO,
   TournamentResultDTO,
   TournamentStatsDTO
-} from '../../core/application/dtos/tournament.dto';
+} from '@/src/core/application/dtos/tournament.dto';
 
 /**
  * Tournament Facade Interface

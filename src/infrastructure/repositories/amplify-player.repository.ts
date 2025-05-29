@@ -1,194 +1,168 @@
+import type { Schema } from '@/amplify/data/resource';
+import { Player } from '@/src/core/domain/entities/player';
 import { generateClient } from 'aws-amplify/data';
-import type { Schema } from '../../../amplify/data/resource';
-import { Player } from '../../core/domain/entities/player';
-import { GameTime } from '../../core/domain/value-objects/game-time';
-import { 
-  IPlayerRepository, 
-  PlayerSearchCriteria, 
-  PlayerSearchResult 
-} from '../../core/domain/repositories/player.repository';
+import { GameTime } from '@/src/core/domain/value-objects/game-time';
+import {
+  IPlayerRepository,
+  PlayerSearchCriteria,
+  PlayerSearchResult
+} from '@/src/core/domain/repositories/player.repository';
 
 /**
- * Amplify implementation of Player Repository
- * Connects domain layer to AWS Amplify DataStore
+ * Amplify implementation of the Player Repository
+ * Handles all player data operations using AWS Amplify
  */
 export class AmplifyPlayerRepository implements IPlayerRepository {
   private client = generateClient<Schema>();
 
+  /**
+   * Save a player (create or update)
+   */
   async save(player: Player): Promise<Player> {
     try {
-      // Check if player exists (update vs create)
-      const existingPlayer = await this.client.models.Player.get({ id: player.id });
+      // Check if player exists
+      const existing = await this.findById(player.id);
       
-      if (existingPlayer.data) {
+      if (existing) {
         // Update existing player
-        const { data: updatedPlayer } = await this.client.models.Player.update({
+        const result = await this.client.models.Player.update({
           id: player.id,
           name: player.name,
-          userId: 'system', // TODO: Get from auth context
-          email: player.email || null,
-          phone: player.phone || null,
-          profileImageUrl: player.profileImageUrl || null,
-          notes: player.notes || null,
+          userId: player.email || '', // Using email as userId for now
           isActive: player.isActive,
-          joinDate: player.joinDate.toISOString(),
+          // Map other fields as needed based on your Amplify schema
         });
 
-        if (!updatedPlayer) {
+        if (!result.data) {
           throw new Error('Failed to update player');
         }
 
-        return this.toDomainEntity(updatedPlayer);
+        return this.mapToPlayer(result.data);
       } else {
         // Create new player
-        const { data: newPlayer } = await this.client.models.Player.create({
+        const result = await this.client.models.Player.create({
           id: player.id,
           name: player.name,
-          userId: 'system', // TODO: Get from auth context
-          email: player.email || null,
-          phone: player.phone || null,
-          profileImageUrl: player.profileImageUrl || null,
-          notes: player.notes || null,
+          userId: player.email || '', // Using email as userId for now
           isActive: player.isActive,
-          joinDate: player.joinDate.toISOString(),
+          // Map other fields as needed based on your Amplify schema
         });
 
-        if (!newPlayer) {
+        if (!result.data) {
           throw new Error('Failed to create player');
         }
 
-        return this.toDomainEntity(newPlayer);
+        return this.mapToPlayer(result.data);
       }
     } catch (error) {
       throw new Error(`Failed to save player: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
+  /**
+   * Find player by ID
+   */
   async findById(id: string): Promise<Player | null> {
     try {
-      const { data: player } = await this.client.models.Player.get({ id });
+      const result = await this.client.models.Player.get({ id });
       
-      if (!player) {
+      if (!result.data) {
         return null;
       }
 
-      return this.toDomainEntity(player);
+      return this.mapToPlayer(result.data);
     } catch (error) {
       throw new Error(`Failed to find player by ID: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
+  /**
+   * Find players by criteria
+   */
   async findMany(criteria: PlayerSearchCriteria): Promise<PlayerSearchResult> {
     try {
-      // Build the query based on criteria
-      let query = this.client.models.Player.list();
+      const filter: any = {};
 
-      // Apply filters
-      const filters: any[] = [];
-      
+      // Build filter based on criteria
       if (criteria.query) {
-        // Search in name (case-insensitive)
-        filters.push({ name: { contains: criteria.query } });
+        filter.name = { contains: criteria.query };
       }
-
       if (criteria.isActive !== undefined) {
-        filters.push({ isActive: { eq: criteria.isActive } });
+        filter.isActive = { eq: criteria.isActive };
       }
 
+      const pageSize = criteria.pageSize || 20;
+      const page = criteria.page || 1;
+      
+      const result = await this.client.models.Player.list({
+        filter: Object.keys(filter).length > 0 ? filter : undefined,
+        limit: pageSize,
+        // Note: Amplify pagination works differently, this is a simplified implementation
+      });
+
+      const players = result.data?.map(data => this.mapToPlayer(data)) || [];
+      
+      // Apply client-side filtering for date ranges if needed
+      let filteredPlayers = players;
       if (criteria.joinedAfter) {
-        filters.push({ joinDate: { ge: criteria.joinedAfter.toISOString() } });
+        const afterDate = new GameTime(criteria.joinedAfter);
+        filteredPlayers = filteredPlayers.filter(p => p.joinDate.isAfter(afterDate) || p.joinDate.equals(afterDate));
       }
-
       if (criteria.joinedBefore) {
-        filters.push({ joinDate: { le: criteria.joinedBefore.toISOString() } });
+        const beforeDate = new GameTime(criteria.joinedBefore);
+        filteredPlayers = filteredPlayers.filter(p => p.joinDate.isBefore(beforeDate) || p.joinDate.equals(beforeDate));
       }
-
-      // Apply filters if any exist
-      if (filters.length > 0) {
-        query = this.client.models.Player.list({
-          filter: filters.length === 1 ? filters[0] : { and: filters }
-        });
-      }
-
-      const { data: players } = await query;
-
-      if (!players) {
-        return {
-          players: [],
-          total: 0,
-          page: criteria.page || 1,
-          pageSize: criteria.pageSize || 20,
-          totalPages: 0,
-        };
-      }
-
-      // Convert to domain entities
-      const domainPlayers = players.map(p => this.toDomainEntity(p));
 
       // Apply sorting
       if (criteria.sortBy) {
-        domainPlayers.sort((a, b) => {
-          let aValue: any;
-          let bValue: any;
-
-          switch (criteria.sortBy) {
-            case 'name':
-              aValue = a.name.toLowerCase();
-              bValue = b.name.toLowerCase();
-              break;
-            case 'joinDate':
-              aValue = a.joinDate.value.getTime();
-              bValue = b.joinDate.value.getTime();
-              break;
-            default:
-              aValue = a.name.toLowerCase();
-              bValue = b.name.toLowerCase();
+        filteredPlayers.sort((a, b) => {
+          let comparison = 0;
+          if (criteria.sortBy === 'name') {
+            comparison = a.name.localeCompare(b.name);
+          } else if (criteria.sortBy === 'joinDate') {
+            comparison = a.joinDate.isBefore(b.joinDate) ? -1 : a.joinDate.isAfter(b.joinDate) ? 1 : 0;
           }
-
-          if (criteria.sortOrder === 'desc') {
-            return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
-          } else {
-            return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
-          }
+          return criteria.sortOrder === 'desc' ? -comparison : comparison;
         });
       }
 
+      const total = filteredPlayers.length;
+      const totalPages = Math.ceil(total / pageSize);
+      
       // Apply pagination
-      const page = criteria.page || 1;
-      const pageSize = criteria.pageSize || 20;
       const startIndex = (page - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedPlayers = domainPlayers.slice(startIndex, endIndex);
-      const totalPages = Math.ceil(domainPlayers.length / pageSize);
+      const paginatedPlayers = filteredPlayers.slice(startIndex, startIndex + pageSize);
 
       return {
         players: paginatedPlayers,
-        total: domainPlayers.length,
+        total,
         page,
         pageSize,
-        totalPages,
+        totalPages
       };
     } catch (error) {
-      throw new Error(`Failed to search players: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Failed to find players: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
+  /**
+   * Find all active players
+   */
   async findAllActive(): Promise<Player[]> {
     try {
-      const { data: players } = await this.client.models.Player.list({
+      const result = await this.client.models.Player.list({
         filter: { isActive: { eq: true } }
       });
 
-      if (!players) {
-        return [];
-      }
-
-      return players.map(p => this.toDomainEntity(p));
+      return result.data?.map(data => this.mapToPlayer(data)) || [];
     } catch (error) {
       throw new Error(`Failed to find active players: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
+  /**
+   * Check if a player exists by ID
+   */
   async exists(id: string): Promise<boolean> {
     try {
       const player = await this.findById(id);
@@ -198,38 +172,62 @@ export class AmplifyPlayerRepository implements IPlayerRepository {
     }
   }
 
+  /**
+   * Delete a player by ID
+   */
   async delete(id: string): Promise<void> {
     try {
-      const { data: deletedPlayer } = await this.client.models.Player.delete({ id });
+      const result = await this.client.models.Player.delete({ id });
       
-      if (!deletedPlayer) {
-        throw new Error('Player not found or already deleted');
+      if (!result.data) {
+        throw new Error('Failed to delete player');
       }
     } catch (error) {
       throw new Error(`Failed to delete player: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  async count(): Promise<number> {
+  /**
+   * Count total players
+   */
+  async count(criteria?: Partial<PlayerSearchCriteria>): Promise<number> {
     try {
-      const { data: players } = await this.client.models.Player.list();
-      return players?.length || 0;
+      const filter: any = {};
+
+      if (criteria?.query) {
+        filter.name = { contains: criteria.query };
+      }
+      if (criteria?.isActive !== undefined) {
+        filter.isActive = { eq: criteria.isActive };
+      }
+
+      const result = await this.client.models.Player.list({
+        filter: Object.keys(filter).length > 0 ? filter : undefined,
+      });
+
+      return result.data?.length || 0;
     } catch (error) {
       throw new Error(`Failed to count players: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  private toDomainEntity(amplifyPlayer: any): Player {
-    return Player.create(
-      amplifyPlayer.id,
-      amplifyPlayer.name,
+  /**
+   * Map Amplify data to Player domain entity
+   */
+  private mapToPlayer(data: any): Player {
+    // Create a join date from createdAt or use current time as fallback
+    const joinDate = data.createdAt ? new GameTime(new Date(data.createdAt)) : GameTime.now();
+    
+    return new Player(
+      data.id,
+      data.name,
+      joinDate,
       {
-        email: amplifyPlayer.email || undefined,
-        phone: amplifyPlayer.phone || undefined,
-        profileImageUrl: amplifyPlayer.profileImageUrl || undefined,
-        notes: amplifyPlayer.notes || undefined,
-        isActive: amplifyPlayer.isActive ?? true,
-        joinDate: new GameTime(new Date(amplifyPlayer.joinDate || Date.now())),
+        email: data.userId, // Assuming userId contains email
+        phone: data.phone,
+        isActive: data.isActive ?? true,
+        profileImageUrl: data.profileImageUrl,
+        notes: data.notes,
       }
     );
   }

@@ -1,4 +1,4 @@
-import { CreateLeagueDTO, UpdateLeagueDTO, LeagueDTO, LeagueListDTO, LeagueSearchDTO } from '../../core/application/dtos/league.dto';
+import { CreateLeagueDTO, UpdateLeagueDTO, LeagueDTO, LeagueListDTO, LeagueSearchDTO } from '@/src/core/application/dtos/league.dto';
 
 /**
  * League Facade Interface

@@ -1,5 +1,5 @@
-import { GameTime } from '../value-objects/game-time';
-import { Points } from '../value-objects/points';
+import { GameTime } from '@/src/core/domain/value-objects/game-time';
+import { Points } from '@/src/core/domain/value-objects/points';
 
 /**
  * Scoreboard Entity

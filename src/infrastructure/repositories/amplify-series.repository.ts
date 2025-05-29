@@ -1,179 +1,124 @@
+import type { Schema } from '@/amplify/data/resource';
+import { Series } from '@/src/core/domain/entities/series';
+import { GameTime } from '@/src/core/domain/value-objects/game-time';
+import { ISeriesRepository } from '@/src/core/domain/repositories/series.repository';
 import { generateClient } from 'aws-amplify/data';
-import type { Schema } from '../../../amplify/data/resource';
-import { Series } from '../../core/domain/entities/series';
-import { GameTime } from '../../core/domain/value-objects/game-time';
-import { ISeriesRepository } from '../../core/domain/repositories/series.repository';
 
 /**
- * Amplify implementation of Series Repository
- * Connects domain layer to AWS Amplify DataStore
+ * Amplify implementation of the Series Repository
+ * Handles all series data operations using AWS Amplify
  */
 export class AmplifySeriesRepository implements ISeriesRepository {
   private client = generateClient<Schema>();
 
-  async create(series: Series): Promise<Series> {
+  /**
+   * Save a series (create or update)
+   */
+  async save(series: Series): Promise<Series> {
     try {
-      const { data: newSeries } = await this.client.models.Series.create({
-        id: series.id,
-        name: series.name,
-        description: series.description || null,
-        seasonId: series.seasonId,
-        leagueId: 'temp-league-id', // TODO: Get from series or context
-        userId: 'system', // TODO: Get from auth context
-        startDate: series.startDate.value.toISOString(),
-        endDate: series.endDate.value.toISOString(),
-        isActive: series.isActive,
-        pointsSystem: null, // TODO: Add to domain entity if needed
-        customPointsConfig: null, // TODO: Add to domain entity if needed
-      });
+      // Check if series exists
+      const existing = await this.findById(series.id);
 
-      if (!newSeries) {
-        throw new Error('Failed to create series');
+      if (existing) {
+        // Update existing series
+        const result = await this.client.models.Series.update({
+          id: series.id,
+          name: series.name,
+          seasonId: series.seasonId,
+          startDate: series.startDate.toISOString(),
+          endDate: series.endDate.toISOString(),
+          isActive: series.isActive,
+          description: series.description || null,
+        });
+
+        if (!result.data) {
+          throw new Error('Failed to update series');
+        }
+
+        return this.mapToSeries(result.data);
+      } else {
+        // Create new series
+        const result = await this.client.models.Series.create({
+          id: series.id,
+          name: series.name,
+          seasonId: series.seasonId,
+          startDate: series.startDate.toISOString(),
+          endDate: series.endDate.toISOString(),
+          isActive: series.isActive,
+          description: series.description || null,
+        });
+
+        if (!result.data) {
+          throw new Error('Failed to create series');
+        }
+
+        return this.mapToSeries(result.data);
       }
-
-      return this.toDomainEntity(newSeries);
     } catch (error) {
-      throw new Error(`Failed to create series: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Failed to save series: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  async update(series: Series): Promise<Series> {
-    try {
-      const { data: updatedSeries } = await this.client.models.Series.update({
-        id: series.id,
-        name: series.name,
-        description: series.description || null,
-        startDate: series.startDate.value.toISOString(),
-        endDate: series.endDate.value.toISOString(),
-        isActive: series.isActive,
-      });
-
-      if (!updatedSeries) {
-        throw new Error('Failed to update series');
-      }
-
-      return this.toDomainEntity(updatedSeries);
-    } catch (error) {
-      throw new Error(`Failed to update series: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  async delete(id: string): Promise<void> {
-    try {
-      const { data: deletedSeries } = await this.client.models.Series.delete({ id });
-      
-      if (!deletedSeries) {
-        throw new Error('Series not found or already deleted');
-      }
-    } catch (error) {
-      throw new Error(`Failed to delete series: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
+  /**
+   * Find series by ID
+   */
   async findById(id: string): Promise<Series | null> {
     try {
-      const { data: series } = await this.client.models.Series.get({ id });
-      
-      if (!series) {
+      const result = await this.client.models.Series.get({ id });
+
+      if (!result.data) {
         return null;
       }
 
-      return this.toDomainEntity(series);
+      return this.mapToSeries(result.data);
     } catch (error) {
       throw new Error(`Failed to find series by ID: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
+  /**
+   * Find all series
+   */
   async findAll(): Promise<Series[]> {
     try {
-      const { data: seriesList } = await this.client.models.Series.list();
-
-      if (!seriesList) {
-        return [];
-      }
-
-      return seriesList.map(s => this.toDomainEntity(s));
+      const result = await this.client.models.Series.list();
+      return result.data?.map(data => this.mapToSeries(data)) || [];
     } catch (error) {
       throw new Error(`Failed to find all series: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
+  /**
+   * Find series by season ID
+   */
   async findBySeasonId(seasonId: string): Promise<Series[]> {
     try {
-      const { data: seriesList } = await this.client.models.Series.list({
+      const result = await this.client.models.Series.list({
         filter: { seasonId: { eq: seasonId } }
       });
-
-      if (!seriesList) {
-        return [];
-      }
-
-      return seriesList.map(s => this.toDomainEntity(s));
+      return result.data?.map(data => this.mapToSeries(data)) || [];
     } catch (error) {
       throw new Error(`Failed to find series by season ID: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
+  /**
+   * Find active series
+   */
   async findActive(): Promise<Series[]> {
     try {
-      const { data: seriesList } = await this.client.models.Series.list({
+      const result = await this.client.models.Series.list({
         filter: { isActive: { eq: true } }
       });
-
-      if (!seriesList) {
-        return [];
-      }
-
-      return seriesList.map(s => this.toDomainEntity(s));
+      return result.data?.map(data => this.mapToSeries(data)) || [];
     } catch (error) {
       throw new Error(`Failed to find active series: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  async findCurrentlyActive(): Promise<Series[]> {
-    try {
-      const now = new Date().toISOString();
-      const { data: seriesList } = await this.client.models.Series.list({
-        filter: {
-          and: [
-            { isActive: { eq: true } },
-            { startDate: { le: now } },
-            { endDate: { ge: now } }
-          ]
-        }
-      });
-
-      if (!seriesList) {
-        return [];
-      }
-
-      return seriesList.map(s => this.toDomainEntity(s));
-    } catch (error) {
-      throw new Error(`Failed to find currently active series: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  async findByDateRange(startDate: Date, endDate: Date): Promise<Series[]> {
-    try {
-      const { data: seriesList } = await this.client.models.Series.list({
-        filter: {
-          and: [
-            { startDate: { ge: startDate.toISOString() } },
-            { endDate: { le: endDate.toISOString() } }
-          ]
-        }
-      });
-
-      if (!seriesList) {
-        return [];
-      }
-
-      return seriesList.map(s => this.toDomainEntity(s));
-    } catch (error) {
-      throw new Error(`Failed to find series by date range: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
+  /**
+   * Check if a series exists by ID
+   */
   async exists(id: string): Promise<boolean> {
     try {
       const series = await this.findById(id);
@@ -183,58 +128,37 @@ export class AmplifySeriesRepository implements ISeriesRepository {
     }
   }
 
-  async findByName(name: string): Promise<Series[]> {
+  /**
+   * Delete a series by ID
+   */
+  async delete(id: string): Promise<void> {
     try {
-      const { data: seriesList } = await this.client.models.Series.list({
-        filter: { name: { contains: name } }
-      });
+      const result = await this.client.models.Series.delete({ id });
 
-      if (!seriesList) {
-        return [];
+      if (!result.data) {
+        throw new Error('Failed to delete series');
       }
-
-      return seriesList.map(s => this.toDomainEntity(s));
     } catch (error) {
-      throw new Error(`Failed to find series by name: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Failed to delete series: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  async findMostRecentBySeasonId(seasonId: string): Promise<Series | null> {
-    try {
-      const { data: seriesList } = await this.client.models.Series.list({
-        filter: { seasonId: { eq: seasonId } }
-      });
+  /**
+   * Map Amplify data to Series domain entity
+   */
+  private mapToSeries(data: any): Series {
+    const startDate = new GameTime(new Date(data.startDate));
+    const endDate = new GameTime(new Date(data.endDate));
 
-      if (!seriesList || seriesList.length === 0) {
-        return null;
-      }
-
-      // Convert to domain entities and sort by start date (most recent first)
-      const domainSeries = seriesList.map(s => this.toDomainEntity(s));
-      domainSeries.sort((a, b) => {
-        if (a.startDate.isAfter(b.startDate)) return -1;
-        if (a.startDate.isBefore(b.startDate)) return 1;
-        return 0;
-      });
-
-      return domainSeries[0];
-    } catch (error) {
-      throw new Error(`Failed to find most recent series by season ID: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  private toDomainEntity(amplifySeries: any): Series {
     return new Series(
-      amplifySeries.id,
-      amplifySeries.name,
-      amplifySeries.seasonId,
-      new GameTime(new Date(amplifySeries.startDate)),
-      new GameTime(new Date(amplifySeries.endDate)),
-      new GameTime(new Date(amplifySeries.createdAt || Date.now())),
+      data.id,
+      data.name,
+      data.seasonId,
+      startDate,
+      endDate,
       {
-        isActive: amplifySeries.isActive ?? true,
-        description: amplifySeries.description || undefined,
-        updatedAt: new GameTime(new Date(amplifySeries.updatedAt || Date.now())),
+        isActive: data.isActive ?? true,
+        description: data.description || undefined,
       }
     );
   }

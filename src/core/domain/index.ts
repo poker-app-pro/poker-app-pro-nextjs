@@ -4,29 +4,29 @@
  */
 
 // Value Objects
-export { Position } from './value-objects/position';
-export { Points } from './value-objects/points';
-export { GameTime } from './value-objects/game-time';
+export { Position } from '@/src/core/domain/value-objects/position';
+export { Points } from '@/src/core/domain/value-objects/points';
+export { GameTime } from '@/src/core/domain/value-objects/game-time';
 
 // Entities
-export { Player } from './entities/player';
-export { GameResult } from './entities/game-result';
-export { League } from './entities/league';
-export { Season } from './entities/season';
-export { Series } from './entities/series';
-export { Tournament } from './entities/tournament';
-export { Qualification } from './entities/qualification';
-export { Scoreboard } from './entities/scoreboard';
+export { Player } from '@/src/core/domain/entities/player';
+export { GameResult } from '@/src/core/domain/entities/game-result';
+export { League } from '@/src/core/domain/entities/league';
+export { Season } from '@/src/core/domain/entities/season';
+export { Series } from '@/src/core/domain/entities/series';
+export { Tournament } from '@/src/core/domain/entities/tournament';
+export { Qualification } from '@/src/core/domain/entities/qualification';
+export { Scoreboard } from '@/src/core/domain/entities/scoreboard';
 
 // Domain Services
-export * from './services/scoring-strategy';
+export * from '@/src/core/domain/services/scoring-strategy';
 
 // Repository Interfaces
-export * from './repositories/player.repository';
-export * from './repositories/game-result.repository';
-export * from './repositories/league.repository';
-export * from './repositories/season.repository';
-export * from './repositories/series.repository';
-export * from './repositories/tournament.repository';
-export * from './repositories/qualification.repository';
-export * from './repositories/scoreboard.repository';
+export * from '@/src/core/domain/repositories/player.repository';
+export * from '@/src/core/domain/repositories/game-result.repository';
+export * from '@/src/core/domain/repositories/league.repository';
+export * from '@/src/core/domain/repositories/season.repository';
+export * from '@/src/core/domain/repositories/series.repository';
+export * from '@/src/core/domain/repositories/tournament.repository';
+export * from '@/src/core/domain/repositories/qualification.repository';
+export * from '@/src/core/domain/repositories/scoreboard.repository';

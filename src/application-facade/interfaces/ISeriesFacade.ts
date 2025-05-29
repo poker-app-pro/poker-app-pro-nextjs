@@ -6,7 +6,7 @@ import {
   SeriesSearchDTO,
   SeriesSummaryDTO,
   SeriesStatsDTO
-} from '../../core/application/dtos/series.dto';
+} from '@/src/core/application/dtos/series.dto';
 
 /**
  * Series Facade Interface

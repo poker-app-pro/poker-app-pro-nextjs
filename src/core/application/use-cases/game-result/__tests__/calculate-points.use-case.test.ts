@@ -1,5 +1,5 @@
 import { CalculatePointsUseCase } from '../calculate-points.use-case';
-import { CalculatePointsDto } from '../../../dtos/game-result.dto';
+import { CalculatePointsDto } from '@/src/core/application/dtos/game-result.dto';
 
 describe('CalculatePointsUseCase', () => {
   let useCase: CalculatePointsUseCase;

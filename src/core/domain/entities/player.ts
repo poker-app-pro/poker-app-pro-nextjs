@@ -1,4 +1,4 @@
-import { GameTime } from '../value-objects/game-time';
+import { GameTime } from '@/src/core/domain/value-objects/game-time';
 
 /**
  * Player Entity

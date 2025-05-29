@@ -1,6 +1,6 @@
-import { Player } from '../../../domain/entities/player';
-import { IPlayerRepository } from '../../../domain/repositories/player.repository';
-import { CreatePlayerDto, PlayerResponseDto } from '../../dtos/player.dto';
+import { Player } from '@/src/core/domain/entities/player';
+import { IPlayerRepository } from '@/src/core/domain/repositories/player.repository';
+import { CreatePlayerDto, PlayerResponseDto } from '@/src/core/application/dtos/player.dto';
 
 /**
  * Create Player Use Case

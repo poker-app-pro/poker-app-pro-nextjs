@@ -1,4 +1,4 @@
-import { Tournament } from '../entities/tournament';
+import { Tournament } from '@/src/core/domain/entities/tournament';
 
 /**
  * Tournament Repository Interface

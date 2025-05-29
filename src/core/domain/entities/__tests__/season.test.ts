@@ -1,5 +1,5 @@
 import { Season } from '../season';
-import { GameTime } from '../../value-objects/game-time';
+import { GameTime } from '@/src/core/domain/value-objects/game-time';
 
 describe('Season Entity', () => {
   const validId = 'season-123';

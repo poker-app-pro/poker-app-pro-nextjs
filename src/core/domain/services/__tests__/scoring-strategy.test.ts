@@ -6,8 +6,8 @@ import {
   WinnerTakesAllScoringStrategy,
   ScoringStrategyFactory
 } from '../scoring-strategy';
-import { Position } from '../../value-objects/position';
-import { Points } from '../../value-objects/points';
+import { Position } from '@/src/core/domain/value-objects/position';
+import { Points } from '@/src/core/domain/value-objects/points';
 
 describe('Scoring Strategies', () => {
   describe('WeightedScoringStrategy', () => {

@@ -1,7 +1,7 @@
-import { Player } from './player';
-import { Position } from '../value-objects/position';
-import { Points } from '../value-objects/points';
-import { GameTime } from '../value-objects/game-time';
+import { Player } from '@/src/core/domain/entities/player';
+import { Position } from '@/src/core/domain/value-objects/position';
+import { Points } from '@/src/core/domain/value-objects/points';
+import { GameTime } from '@/src/core/domain/value-objects/game-time';
 
 /**
  * GameResult Entity

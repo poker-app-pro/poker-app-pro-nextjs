@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { BarChart2, Trophy, Loader2, AlertCircle } from "lucide-react"
 import Link from "next/link"
-import { getStandings, StandingsData } from "../../__actions/standings"
+import { getStandings, StandingsData } from "@/app/__actions/standings"
  
 export default function StandingsPage() {
   const [loading, setLoading] = useState(true)

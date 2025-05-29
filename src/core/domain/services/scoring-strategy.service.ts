@@ -1,5 +1,5 @@
 // Core Domain Layer - Scoring Strategy Service
-import type { GameResult } from "../entities/game-result.entity"
+import type { GameResult } from "@/src/core/domain/entities/game-result.entity"
 
 export interface ScoringStrategy {
   calculatePoints(gameResult: GameResult): Map<string, number>

@@ -1,8 +1,8 @@
 import { LeagueFacade } from '../league.facade';
-import { ILeagueRepository } from '../../../core/domain/repositories/league.repository';
-import { IAuthService } from '../../../infrastructure/services/amplify-auth.service';
-import { League } from '../../../core/domain/entities/league';
-import { CreateLeagueDTO, UpdateLeagueDTO, LeagueSearchDTO } from '../../../core/application/dtos/league.dto';
+import { ILeagueRepository } from '@/src/core/domain/repositories/league.repository';
+import { IAuthService } from '@/src/infrastructure/services/amplify-auth.service';
+import { League } from '@/src/core/domain/entities/league';
+import { CreateLeagueDTO, UpdateLeagueDTO, LeagueSearchDTO } from '@/src/core/application/dtos/league.dto';
 
 // Mock dependencies
 const mockLeagueRepository: jest.Mocked<ILeagueRepository> = {
@@ -38,7 +38,7 @@ describe('LeagueFacade', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     leagueFacade = new LeagueFacade(mockLeagueRepository, mockAuthService);
-    
+
     // Create a mock league for testing
     mockLeague = League.create(
       'league-1',

@@ -1,4 +1,4 @@
-import { Qualification } from '../entities/qualification';
+import { Qualification } from '@/src/core/domain/entities/qualification';
 
 /**
  * Qualification Repository Interface

@@ -1,7 +1,7 @@
 import { CreatePlayerUseCase } from '../create-player.use-case';
-import { IPlayerRepository } from '../../../../domain/repositories/player.repository';
-import { Player } from '../../../../domain/entities/player';
-import { CreatePlayerDto } from '../../../dtos/player.dto';
+import { IPlayerRepository } from '@/src/core/domain/repositories/player.repository';
+import { Player } from '@/src/core/domain/entities/player';
+import { CreatePlayerDto } from '@/src/core/application/dtos/player.dto';
 
 // Mock repository
 const mockPlayerRepository: jest.Mocked<IPlayerRepository> = {

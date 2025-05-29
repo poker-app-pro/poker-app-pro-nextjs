@@ -1,10 +1,10 @@
-import { GameResult } from '../../../domain/entities/game-result';
-import { Position } from '../../../domain/value-objects/position';
-import { Points } from '../../../domain/value-objects/points';
-import { GameTime } from '../../../domain/value-objects/game-time';
-import { IGameResultRepository } from '../../../domain/repositories/game-result.repository';
-import { IPlayerRepository } from '../../../domain/repositories/player.repository';
-import { CreateGameResultDto, GameResultResponseDto } from '../../dtos/game-result.dto';
+import { GameResult } from '@/src/core/domain/entities/game-result';
+import { Position } from '@/src/core/domain/value-objects/position';
+import { Points } from '@/src/core/domain/value-objects/points';
+import { GameTime } from '@/src/core/domain/value-objects/game-time';
+import { IGameResultRepository } from '@/src/core/domain/repositories/game-result.repository';
+import { IPlayerRepository } from '@/src/core/domain/repositories/player.repository';
+import { CreateGameResultDto, GameResultResponseDto } from '@/src/core/application/dtos/game-result.dto';
 
 /**
  * Create Game Result Use Case

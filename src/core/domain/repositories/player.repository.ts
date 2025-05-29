@@ -1,4 +1,4 @@
-import { Player } from '../entities/player';
+import { Player } from '@/src/core/domain/entities/player';
 
 /**
  * Player Repository Interface

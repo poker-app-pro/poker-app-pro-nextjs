@@ -1,6 +1,6 @@
-import { Player } from '../../../domain/entities/player';
-import { IPlayerRepository, PlayerSearchCriteria } from '../../../domain/repositories/player.repository';
-import { PlayerSearchDto, PlayerListDto, PlayerResponseDto } from '../../dtos/player.dto';
+import { Player } from '@/src/core/domain/entities/player';
+import { IPlayerRepository, PlayerSearchCriteria } from '@/src/core/domain/repositories/player.repository';
+import { PlayerSearchDto, PlayerListDto, PlayerResponseDto } from '@/src/core/application/dtos/player.dto';
 
 /**
  * Search Players Use Case

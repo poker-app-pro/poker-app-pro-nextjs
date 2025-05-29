@@ -1,14 +1,14 @@
-import { ILeagueFacade } from '../interfaces/ILeagueFacade';
+import { ILeagueFacade } from '@/src/application-facade/interfaces/ILeagueFacade';
 import { 
   CreateLeagueDTO, 
   UpdateLeagueDTO, 
   LeagueDTO, 
   LeagueListDTO,
   LeagueSearchDTO
-} from '../../core/application/dtos/league.dto';
-import { ILeagueRepository } from '../../core/domain/repositories/league.repository';
-import { IAuthService } from '../../infrastructure/services/amplify-auth.service';
-import { League } from '../../core/domain/entities/league';
+} from '@/src/core/application/dtos/league.dto';
+import { ILeagueRepository } from '@/src/core/domain/repositories/league.repository';
+import { IAuthService } from '@/src/infrastructure/services/amplify-auth.service';
+import { League } from '@/src/core/domain/entities/league';
 
 /**
  * League Facade Implementation

@@ -1,5 +1,5 @@
 import { Player } from '../player';
-import { GameTime } from '../../value-objects/game-time';
+import { GameTime } from '@/src/core/domain/value-objects/game-time';
 
 describe('Player Entity', () => {
   const playerId = 'player-123';

@@ -1,7 +1,7 @@
-import { Position } from '../../../domain/value-objects/position';
-import { Points } from '../../../domain/value-objects/points';
-import { ScoringStrategyFactory } from '../../../domain/services/scoring-strategy';
-import { CalculatePointsDto, PointsCalculationResponseDto } from '../../dtos/game-result.dto';
+import { Position } from '@/src/core/domain/value-objects/position';
+import { Points } from '@/src/core/domain/value-objects/points';
+import { ScoringStrategyFactory } from '@/src/core/domain/services/scoring-strategy';
+import { CalculatePointsDto, PointsCalculationResponseDto } from '@/src/core/application/dtos/game-result.dto';
 
 /**
  * Calculate Points Use Case

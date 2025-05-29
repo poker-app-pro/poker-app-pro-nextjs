@@ -1,9 +1,9 @@
 import { SeriesFacade } from '../series.facade';
-import { ISeriesRepository } from '../../../core/domain/repositories/series.repository';
-import { IAuthService } from '../../../infrastructure/services/amplify-auth.service';
-import { Series } from '../../../core/domain/entities/series';
-import { GameTime } from '../../../core/domain/value-objects/game-time';
-import { CreateSeriesDTO, UpdateSeriesDTO, SeriesSearchDTO } from '../../../core/application/dtos/series.dto';
+import { ISeriesRepository } from '@/src/core/domain/repositories/series.repository';
+import { IAuthService } from '@/src/infrastructure/services/amplify-auth.service';
+import { Series } from '@/src/core/domain/entities/series';
+import { GameTime } from '@/src/core/domain/value-objects/game-time';
+import { CreateSeriesDTO, UpdateSeriesDTO, SeriesSearchDTO } from '@/src/core/application/dtos/series.dto';
 
 // Mock dependencies
 const mockSeriesRepository: jest.Mocked<ISeriesRepository> = {
@@ -42,7 +42,7 @@ describe('SeriesFacade', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     seriesFacade = new SeriesFacade(mockSeriesRepository, mockAuthService);
-    
+
     // Create a mock series for testing
     mockSeries = Series.create(
       'series-1',

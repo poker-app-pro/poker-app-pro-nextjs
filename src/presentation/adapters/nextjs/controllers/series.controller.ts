@@ -2,12 +2,12 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { 
-  CreateSeriesDTO, 
-  UpdateSeriesDTO, 
-  SeriesSearchDTO 
-} from '../../../../core/application/dtos/series.dto';
-import { ISeriesFacade } from '../../../../application-facade/interfaces/ISeriesFacade';
+import {
+  CreateSeriesDTO,
+  UpdateSeriesDTO,
+  SeriesSearchDTO
+} from '@/src/core/application/dtos/series.dto';
+import { ISeriesFacade } from '@/src/application-facade/interfaces/ISeriesFacade';
 
 /**
  * Next.js Series Controller
@@ -28,13 +28,13 @@ export function setSeriesFacade(facade: ISeriesFacade) {
 export async function createSeriesAction(data: CreateSeriesDTO) {
   try {
     const result = await seriesFacade.createSeries(data);
-    
+
     if (result.success && result.data) {
       revalidatePath('/series');
       revalidatePath(`/seasons/${data.seasonId}`);
       return { success: true, data: result.data };
     }
-    
+
     return { success: false, error: result.error || 'Failed to create series' };
   } catch (error) {
     console.error('Error creating series:', error);
@@ -48,14 +48,14 @@ export async function createSeriesAction(data: CreateSeriesDTO) {
 export async function updateSeriesAction(data: UpdateSeriesDTO) {
   try {
     const result = await seriesFacade.updateSeries(data);
-    
+
     if (result.success && result.data) {
       revalidatePath('/series');
       revalidatePath(`/series/${data.id}`);
       revalidatePath(`/seasons/${result.data.seasonId}`);
       return { success: true, data: result.data };
     }
-    
+
     return { success: false, error: result.error || 'Failed to update series' };
   } catch (error) {
     console.error('Error updating series:', error);
@@ -71,7 +71,7 @@ export async function deleteSeriesAction(id: string, userId: string) {
     // Get series data before deletion for revalidation
     const seriesResult = await seriesFacade.getSeries(id);
     const result = await seriesFacade.deleteSeries(id, userId);
-    
+
     if (result.success) {
       revalidatePath('/series');
       if (seriesResult.success && seriesResult.data) {
@@ -79,7 +79,7 @@ export async function deleteSeriesAction(id: string, userId: string) {
       }
       return { success: true };
     }
-    
+
     return { success: false, error: result.error || 'Failed to delete series' };
   } catch (error) {
     console.error('Error deleting series:', error);
@@ -93,11 +93,11 @@ export async function deleteSeriesAction(id: string, userId: string) {
 export async function getSeriesAction(id: string) {
   try {
     const result = await seriesFacade.getSeries(id);
-    
+
     if (result.success) {
       return { success: true, data: result.data };
     }
-    
+
     return { success: false, error: result.error || 'Series not found' };
   } catch (error) {
     console.error('Error getting series:', error);
@@ -111,11 +111,11 @@ export async function getSeriesAction(id: string) {
 export async function getAllSeriesAction(search?: SeriesSearchDTO) {
   try {
     const result = await seriesFacade.getAllSeries(search);
-    
+
     if (result.success) {
       return { success: true, data: result.data };
     }
-    
+
     return { success: false, error: result.error || 'Failed to get series' };
   } catch (error) {
     console.error('Error getting series:', error);
@@ -129,11 +129,11 @@ export async function getAllSeriesAction(search?: SeriesSearchDTO) {
 export async function getSeriesBySeasonAction(seasonId: string) {
   try {
     const result = await seriesFacade.getSeriesBySeason(seasonId);
-    
+
     if (result.success) {
       return { success: true, data: result.data };
     }
-    
+
     return { success: false, error: result.error || 'Failed to get series' };
   } catch (error) {
     console.error('Error getting series by season:', error);
@@ -147,11 +147,11 @@ export async function getSeriesBySeasonAction(seasonId: string) {
 export async function getSeriesByLeagueAction(leagueId: string) {
   try {
     const result = await seriesFacade.getSeriesByLeague(leagueId);
-    
+
     if (result.success) {
       return { success: true, data: result.data };
     }
-    
+
     return { success: false, error: result.error || 'Failed to get series' };
   } catch (error) {
     console.error('Error getting series by league:', error);
@@ -165,11 +165,11 @@ export async function getSeriesByLeagueAction(leagueId: string) {
 export async function getActiveSeriesAction(seasonId?: string) {
   try {
     const result = await seriesFacade.getActiveSeries(seasonId);
-    
+
     if (result.success) {
       return { success: true, data: result.data };
     }
-    
+
     return { success: false, error: result.error || 'Failed to get active series' };
   } catch (error) {
     console.error('Error getting active series:', error);
@@ -183,11 +183,11 @@ export async function getActiveSeriesAction(seasonId?: string) {
 export async function getSeriesSummaryAction(id: string) {
   try {
     const result = await seriesFacade.getSeriesSummary(id);
-    
+
     if (result.success) {
       return { success: true, data: result.data };
     }
-    
+
     return { success: false, error: result.error || 'Failed to get series summary' };
   } catch (error) {
     console.error('Error getting series summary:', error);
@@ -201,11 +201,11 @@ export async function getSeriesSummaryAction(id: string) {
 export async function getSeriesStatsAction(id: string) {
   try {
     const result = await seriesFacade.getSeriesStats(id);
-    
+
     if (result.success) {
       return { success: true, data: result.data };
     }
-    
+
     return { success: false, error: result.error || 'Failed to get series statistics' };
   } catch (error) {
     console.error('Error getting series statistics:', error);
@@ -219,13 +219,13 @@ export async function getSeriesStatsAction(id: string) {
 export async function toggleSeriesStatusAction(id: string, isActive: boolean, userId: string) {
   try {
     const result = await seriesFacade.toggleSeriesStatus(id, isActive, userId);
-    
+
     if (result.success) {
       revalidatePath('/series');
       revalidatePath(`/series/${id}`);
       return { success: true };
     }
-    
+
     return { success: false, error: result.error || 'Failed to toggle series status' };
   } catch (error) {
     console.error('Error toggling series status:', error);

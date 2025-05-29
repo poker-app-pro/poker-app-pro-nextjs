@@ -1,4 +1,4 @@
-import { GameResult } from '../entities/game-result';
+import { GameResult } from '@/src/core/domain/entities/game-result';
 
 /**
  * GameResult Repository Interface

@@ -1,6 +1,6 @@
 import { AmplifyPlayerRepository } from '../amplify-player.repository';
-import { Player } from '../../../core/domain/entities/player';
-import { PlayerSearchCriteria } from '../../../core/domain/repositories/player.repository';
+import { Player } from '@/src/core/domain/entities/player';
+import { PlayerSearchCriteria } from '@/src/core/domain/repositories/player.repository';
 import { generateClient } from 'aws-amplify/data';
 
 // Mock AWS Amplify data

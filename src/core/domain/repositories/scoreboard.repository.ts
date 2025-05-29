@@ -1,4 +1,4 @@
-import { Scoreboard } from '../entities/scoreboard';
+import { Scoreboard } from '@/src/core/domain/entities/scoreboard';
 
 /**
  * Scoreboard Repository Interface

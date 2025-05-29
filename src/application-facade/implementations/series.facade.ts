@@ -1,4 +1,4 @@
-import { ISeriesFacade } from '../interfaces/ISeriesFacade';
+import { ISeriesFacade } from '@/src/application-facade/interfaces/ISeriesFacade';
 import { 
   CreateSeriesDTO, 
   UpdateSeriesDTO, 
@@ -7,11 +7,11 @@ import {
   SeriesSearchDTO,
   SeriesSummaryDTO,
   SeriesStatsDTO
-} from '../../core/application/dtos/series.dto';
-import { ISeriesRepository } from '../../core/domain/repositories/series.repository';
-import { IAuthService } from '../../infrastructure/services/amplify-auth.service';
-import { Series } from '../../core/domain/entities/series';
-import { GameTime } from '../../core/domain/value-objects/game-time';
+} from '@/src/core/application/dtos/series.dto';
+import { ISeriesRepository } from '@/src/core/domain/repositories/series.repository';
+import { IAuthService } from '@/src/infrastructure/services/amplify-auth.service';
+import { Series } from '@/src/core/domain/entities/series';
+import { GameTime } from '@/src/core/domain/value-objects/game-time';
 
 /**
  * Series Facade Implementation
