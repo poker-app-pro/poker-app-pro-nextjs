@@ -19,7 +19,7 @@ const SESSION_EXPIRY = 24 * 60 * 60 * 1000;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [, setIsAuthenticated] = useState(false);
-  const [ , setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sessionExpiry, setSessionExpiry] = useState<number | null>(null);
   const router = useRouter();
@@ -43,6 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await getCurrentUser();
         setIsAuthenticated(true);
       } catch (err) {
+        console.error("checkAuth error:", err);
         setIsAuthenticated(false);
       } finally {
         setIsLoading(false);

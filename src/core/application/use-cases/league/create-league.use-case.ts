@@ -1,6 +1,5 @@
 import { League } from '@/src/core/domain/entities/league';
 import { ILeagueRepository } from '@/src/core/domain/repositories/league.repository';
-import { GameTime } from '@/src/core/domain/value-objects/game-time';
 
 export interface CreateLeagueRequest {
   name: string;
