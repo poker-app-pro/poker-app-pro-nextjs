@@ -53,7 +53,7 @@ export default function SeriesDetailsPage() {
         }
 
         // Find the specific series
-        const seriesData = seriesResult?.data?.find(
+        const seriesData = seriesResult?.data?.series?.find(
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (s: any) => s.id === seriesId
         );
@@ -108,7 +108,7 @@ export default function SeriesDetailsPage() {
     setDeleteError(null);
 
     try {
-      const result = await deleteSeries(seriesId, series.userId);
+      const result = await deleteSeries(seriesId, series.createdBy);
 
       if (!result.success) {
         throw new Error(result.error || "Failed to delete series");
@@ -427,4 +427,4 @@ export default function SeriesDetailsPage() {
       )}
     </>
   );
-} 
+}

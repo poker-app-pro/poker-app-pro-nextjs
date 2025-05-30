@@ -2,6 +2,7 @@ import type React from "react";
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import "./globals.css";
+import "./di-setup"; // Import DI setup to initialize on app startup
 import { ThemeProvider } from "@/components/theme-provider";
 import { HierarchyProvider } from "@/contexts/hierarchy-context";
 import AmplifyClientSide from "@/components/AmplifyClient";

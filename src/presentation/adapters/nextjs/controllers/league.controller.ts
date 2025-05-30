@@ -10,8 +10,11 @@ import { CreateLeagueDTO, UpdateLeagueDTO, LeagueSearchDTO } from '@/src/core/ap
 // This will be injected via DI container
 let leagueFacade: ILeagueFacade;
 
+// This function is used for dependency injection and not as a server action
+// It's called from the client-side code during initialization
 export function setLeagueFacade(facade: ILeagueFacade) {
   leagueFacade = facade;
+  console.log('League facade set successfully');
 }
 
 /**

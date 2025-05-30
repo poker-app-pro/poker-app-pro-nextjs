@@ -36,9 +36,18 @@ const LeaguesList = ({ searchQuery = "" }: LeaguesListProps) => {
         const result = await getLeagues()
  
         if (result.success && result.data) {
-          if(result.data) {
-            setAllLeagues(result.data)
-          }
+          // Map LeagueDTO objects to League interface
+          const leagues = (result.data.leagues || []).map(league => ({
+            id: league.id,
+            name: league.name,
+            description: league.description || null,
+            isActive: league.isActive,
+            imageUrl: null,
+            seasons: [],
+            series: [],
+            tournaments: []
+          }));
+          setAllLeagues(leagues)
         } else {
           setError(result.error || "Failed to fetch leagues")
         }

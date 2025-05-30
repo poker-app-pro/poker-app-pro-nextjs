@@ -29,7 +29,7 @@ export default function SeriesContent() {
         const seasonsResult = await getSeasons()
 
         if (seriesResult.success && seasonsResult.success) {
-          setSeriesList(seriesResult.data || [])
+          setSeriesList(seriesResult.data?.series || [])
           setSeasons(seasonsResult.data || [])
 
           // Create season map for lookup
@@ -41,7 +41,7 @@ export default function SeriesContent() {
           setSeasonMap(newSeasonMap)
 
           // Process series with tournaments
-          await processSeriesWithTournaments(seriesResult.data || [])
+          await processSeriesWithTournaments(seriesResult.data?.series || [])
         } else {
           setError(seriesResult.error || seasonsResult.error || "Failed to fetch data")
         }

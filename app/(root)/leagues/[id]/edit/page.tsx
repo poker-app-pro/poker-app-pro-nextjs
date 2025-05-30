@@ -19,7 +19,7 @@ export default function EditLeaguePage() {
   const [error, setError] = useState<string | null>(null)
   const [formState, setFormState] = useState<"idle" | "submitting" | "success" | "error">("idle")
   const [formError, setFormError] = useState<string | null>(null)
-  const [userId, setUserId] = useState<string>("")
+  const [ownerId, setOwnerId] = useState<string>("")
 
   useEffect(() => {
     async function fetchLeague() {
@@ -32,7 +32,7 @@ export default function EditLeaguePage() {
         }
 
         setLeague(result.data)
-        setUserId(result.data.userId)
+        setOwnerId(result.data.ownerId)
       } catch (err) {
         console.error("Error fetching league:", err)
         setError(err instanceof Error ? err.message : "An unexpected error occurred")
@@ -53,7 +53,7 @@ export default function EditLeaguePage() {
 
     try {
       const formData = new FormData(event.currentTarget)
-      formData.append("userId", userId)
+      formData.append("ownerId", ownerId)
 
       const result = await updateLeague(leagueId, formData)
 

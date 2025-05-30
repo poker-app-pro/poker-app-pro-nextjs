@@ -39,11 +39,11 @@ export default function LeagueDetailsPage() {
         setLeagueDetails({
           league: leagueResult.data,
           stats: {
-            seasonsCount: leagueResult.data.seasons?.length || 0,
-            seriesCount: leagueResult.data.series?.length || 0,
-            tournamentsCount: leagueResult.data.tournaments?.length || 0,
-            resultsCount: 0, // This would need to be calculated
-            playersCount: 0, // This would need to be calculated
+            seasonsCount: 0, // These would need to be fetched separately
+            seriesCount: 0,
+            tournamentsCount: 0,
+            resultsCount: 0,
+            playersCount: 0,
           },
           seasons: [], // This would need to be fetched
           series: [], // This would need to be fetched
@@ -67,7 +67,7 @@ export default function LeagueDetailsPage() {
     setDeleteError(null)
 
     try {
-      const result = await deleteLeague(leagueId, leagueDetails.league.userId)
+      const result = await deleteLeague(leagueId, leagueDetails.league.ownerId)
 
       if (!result.success) {
         throw new Error(result.error || "Failed to delete league")

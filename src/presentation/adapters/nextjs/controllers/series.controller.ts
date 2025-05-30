@@ -18,8 +18,11 @@ import { ISeriesFacade } from '@/src/application-facade/interfaces/ISeriesFacade
 // This will be injected via DI container
 let seriesFacade: ISeriesFacade;
 
-export function setSeriesFacade(facade: ISeriesFacade) {
+// This function is used for dependency injection and not as a server action
+// It's called from the client-side code during initialization
+export async function setSeriesFacade(facade: ISeriesFacade) {
   seriesFacade = facade;
+  console.log('Series facade set successfully');
 }
 
 /**
