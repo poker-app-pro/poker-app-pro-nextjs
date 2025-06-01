@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Trophy, Loader2, AlertCircle } from "lucide-react";
@@ -11,30 +11,49 @@ import { useAuth } from "@/contexts/auth-context";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { createSession } = useAuth();
+  const { createSession, error: authError, isLoading, isAuthenticated } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      router.push("/results");
+    }
+  }, [isAuthenticated, isLoading, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsSubmitting(true);
     setError("");
 
-    // This would be replaced with actual Amplify authentication
     try {
-      // Simulate API call
+      // Sign in with AWS Amplify
       await signIn({ username: email, password });
+      
+      // Establish session in auth context
       await createSession();
 
-      // For demo purposes, navigate to dashboard
+      // Navigate to dashboard
       router.push("/results");
-    } catch (err) {
-      console.log(err);
-      setError("Invalid email or password");
+    } catch (err: any) {
+      console.error("Login error:", err);
+      
+      // Provide more specific error messages based on the error type
+      if (err.name === "UserNotConfirmedException") {
+        setError("Please verify your email before logging in");
+        router.push(`/auth/verify?email=${encodeURIComponent(email)}`);
+      } else if (err.name === "NotAuthorizedException") {
+        setError("Incorrect username or password");
+      } else if (err.name === "UserNotFoundException") {
+        setError("User does not exist");
+      } else {
+        setError(err.message || "Failed to sign in. Please try again.");
+      }
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -54,10 +73,10 @@ export default function LoginPage() {
           Sign in to your account
         </p>
 
-        {error && (
+        {(error || authError) && (
           <div className="bg-red-50 text-red-500 p-3 rounded mb-4 text-sm flex items-center gap-2">
             <AlertCircle className="h-4 w-4" />
-            {error}
+            {error || authError}
           </div>
         )}
 
@@ -75,7 +94,7 @@ export default function LoginPage() {
                 className="material-input"
                 placeholder="admin@example.com"
                 required
-                disabled={isLoading}
+                disabled={isLoading || isSubmitting}
               />
             </div>
 
@@ -98,7 +117,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="material-input"
                 required
-                disabled={isLoading}
+                disabled={isLoading || isSubmitting}
               />
             </div>
 
@@ -107,7 +126,7 @@ export default function LoginPage() {
                 id="remember"
                 type="checkbox"
                 className="h-4 w-4 rounded border-gray-200 text-primary focus:ring-primary"
-                disabled={isLoading}
+                disabled={isLoading || isSubmitting}
               />
               <label
                 htmlFor="remember"
@@ -120,9 +139,9 @@ export default function LoginPage() {
             <button
               type="submit"
               className="material-button-primary bg-blue-600 text-white hover:bg-blue-700 w-full flex items-center justify-center gap-2"
-              disabled={isLoading}
+              disabled={isLoading || isSubmitting}
             >
-              {isLoading ? (
+              {isLoading || isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Signing in...

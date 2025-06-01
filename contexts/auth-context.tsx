@@ -1,13 +1,14 @@
 "use client";
 
-import type React from "react";
+import { type ReactNode } from "react";
 
 import { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentUser, signOut } from "aws-amplify/auth";
+import { getCurrentUser, signOut, fetchAuthSession } from "aws-amplify/auth";
 
 interface AuthContextType {
- 
+  isAuthenticated: boolean;
+  isLoading: boolean;
   createSession: () => Promise<void>;
   logout: () => Promise<void>;
   error: string | null;
@@ -15,35 +16,28 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// 24 hours in milliseconds
-const SESSION_EXPIRY = 24 * 60 * 60 * 1000;
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [, setIsAuthenticated] = useState(false);
-  const [ , setIsLoading] = useState(true);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sessionExpiry, setSessionExpiry] = useState<number | null>(null);
   const router = useRouter();
 
   // Check authentication status on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check if session is expired
-        const expiryTime = localStorage.getItem("sessionExpiry");
-        if (expiryTime && Number(expiryTime) < Date.now()) {
-          // Session expired, log out
-          await signOut();
-          localStorage.removeItem("sessionExpiry");
-          setIsAuthenticated(false);
-          setIsLoading(false);
-          return;
-        }
-
-        // Check current auth state
+        // Check current auth state using Amplify's built-in session management
         await getCurrentUser();
-        setIsAuthenticated(true);
+        
+        // Verify the session is valid
+        const session = await fetchAuthSession();
+        if (session.tokens) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
       } catch (err) {
+        console.log("Not authenticated", err);
         setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
@@ -53,40 +47,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, []);
 
-  // Set up session expiry timer
-  useEffect(() => {
-    if (sessionExpiry) {
-      const timeLeft = sessionExpiry - Date.now();
-
-      if (timeLeft <= 0) {
-        // Session already expired
-        logout();
-        return;
-      }
-
-      // Set timer to log out when session expires
-      const timer = setTimeout(() => {
-        logout();
-      }, timeLeft);
-
-      return () => clearTimeout(timer);
-    }
-  }, [sessionExpiry]);
-
   const createSession = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Set session expiry time (24 hours from now)
-      const expiryTime = Date.now() + SESSION_EXPIRY;
-      localStorage.setItem("sessionExpiry", expiryTime.toString());
-      setSessionExpiry(expiryTime);
-
+      // Fetch the auth session to ensure it's properly established
+      const session = await fetchAuthSession();
+      if (!session.tokens) {
+        throw new Error("Failed to establish session");
+      }
+      
       setIsAuthenticated(true);
     } catch (err) {
       console.error("Login error:", err);
-      setError("Invalid username or password");
+      setError("Failed to establish session. Please try again.");
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
@@ -97,9 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
 
     try {
+      // Use Amplify's signOut to properly clear the session
       await signOut();
-      localStorage.removeItem("sessionExpiry");
-      setSessionExpiry(null);
       setIsAuthenticated(false);
       router.push("/auth/login");
     } catch (err) {
@@ -111,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ createSession, logout, error }}
+      value={{ isAuthenticated, isLoading, createSession, logout, error }}
     >
       {children}
     </AuthContext.Provider>
