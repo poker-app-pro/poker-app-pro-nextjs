@@ -1,4 +1,10 @@
-import { CreateLeagueDTO, UpdateLeagueDTO, LeagueDTO, LeagueListDTO, LeagueSearchDTO } from '@/src/core/application/dtos/league.dto';
+import { 
+  CreateLeagueDTO, 
+  UpdateLeagueDTO, 
+  LeagueDTO, 
+  LeagueListDTO, 
+  LeagueSearchDTO
+} from '@/src/core/application/dtos/league.dto';
 
 /**
  * League Facade Interface
@@ -28,20 +34,30 @@ export interface ILeagueFacade {
   /**
    * Get all leagues
    */
-  getLeagues(search?: LeagueSearchDTO): Promise<{ success: boolean; data?: LeagueListDTO; error?: string }>;
+  getAllLeagues(search?: LeagueSearchDTO): Promise<{ success: boolean; data?: LeagueListDTO; error?: string }>;
 
   /**
-   * Get leagues by owner
+   * Get leagues by user
    */
-  getLeaguesByOwner(ownerId: string): Promise<{ success: boolean; data?: LeagueDTO[]; error?: string }>;
-
-  /**
-   * Get active leagues
-   */
-  getActiveLeagues(): Promise<{ success: boolean; data?: LeagueDTO[]; error?: string }>;
+  getLeaguesByUser(userId: string): Promise<{ success: boolean; data?: LeagueDTO[]; error?: string }>;
 
   /**
    * Check if league exists
    */
   leagueExists(id: string): Promise<{ success: boolean; exists?: boolean; error?: string }>;
+
+  /**
+   * Add user to league
+   */
+  addUserToLeague(leagueId: string, userId: string, role: string): Promise<{ success: boolean; error?: string }>;
+
+  /**
+   * Remove user from league
+   */
+  removeUserFromLeague(leagueId: string, userId: string): Promise<{ success: boolean; error?: string }>;
+
+  /**
+   * Get league users
+   */
+  getLeagueUsers(leagueId: string): Promise<{ success: boolean; data?: { userId: string; role: string }[]; error?: string }>;
 }

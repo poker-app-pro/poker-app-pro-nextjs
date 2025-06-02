@@ -1,134 +1,86 @@
-import { 
-  CreateQualificationDTO, 
-  UpdateQualificationDTO, 
-  QualificationDTO, 
-  QualificationListDTO, 
-  QualificationSearchDTO,
-  QualificationSummaryDTO,
-  PlayerQualificationStatusDTO,
-  QualificationHistoryDTO,
-  QualificationStatsDTO,
-  BulkQualificationDTO,
-  QualificationValidationDTO
-} from '@/src/core/application/dtos/qualification.dto';
-
 /**
  * Qualification Facade Interface
  * Framework-agnostic interface for qualification operations
  */
+
+export interface QualifiedPlayerDto {
+  id: string;
+  name: string;
+  tournamentCount: number;
+  totalChips: number;
+  qualificationType?: string;
+}
+
+export interface QualificationStatusDto {
+  totalQualified: number;
+  maxPlayers: number;
+  tournamentWinners: number;
+  topQualifiers: number;
+  remainingSpots: number;
+}
+
+export interface SeasonEventDto {
+  id: string;
+  name: string;
+  date: string;
+  playerCount: number;
+  results: SeasonEventResultDto[];
+}
+
+export interface SeasonEventResultDto {
+  position: number;
+  playerId: string;
+  playerName: string;
+  startingChips: number;
+  prize: number;
+}
+
+export interface RecordSeasonEventDto {
+  seasonId: string;
+  eventName: string;
+  eventDate: string;
+  results: {
+    playerId: string;
+    position: number;
+    prize: number;
+  }[];
+  userId: string;
+}
+
 export interface IQualificationFacade {
   /**
-   * Create a new qualification
+   * Get qualified players for a season
    */
-  createQualification(data: CreateQualificationDTO): Promise<{ success: boolean; data?: QualificationDTO; error?: string }>;
+  getQualifiedPlayers(seasonId: string, searchQuery?: string): Promise<{ 
+    success: boolean; 
+    data?: QualifiedPlayerDto[]; 
+    error?: string 
+  }>;
 
   /**
-   * Update an existing qualification
+   * Get qualification status for a season
    */
-  updateQualification(data: UpdateQualificationDTO): Promise<{ success: boolean; data?: QualificationDTO; error?: string }>;
+  getQualificationStatus(seasonId: string): Promise<{ 
+    success: boolean; 
+    data?: QualificationStatusDto; 
+    error?: string 
+  }>;
 
   /**
-   * Delete a qualification
+   * Get previous season events
    */
-  deleteQualification(id: string, userId: string): Promise<{ success: boolean; error?: string }>;
+  getPreviousSeasonEvents(seasonId: string): Promise<{ 
+    success: boolean; 
+    data?: SeasonEventDto[]; 
+    error?: string 
+  }>;
 
   /**
-   * Get a qualification by ID
+   * Record season event results
    */
-  getQualification(id: string): Promise<{ success: boolean; data?: QualificationDTO; error?: string }>;
-
-  /**
-   * Get all qualifications
-   */
-  getAllQualifications(search?: QualificationSearchDTO): Promise<{ success: boolean; data?: QualificationListDTO; error?: string }>;
-
-  /**
-   * Get qualifications by player
-   */
-  getQualificationsByPlayer(playerId: string): Promise<{ success: boolean; data?: QualificationDTO[]; error?: string }>;
-
-  /**
-   * Get qualifications by event
-   */
-  getQualificationsByEvent(eventId: string, eventType: 'tournament' | 'series' | 'season'): Promise<{ success: boolean; data?: QualificationDTO[]; error?: string }>;
-
-  /**
-   * Get player qualification status for an event
-   */
-  getPlayerQualificationStatus(playerId: string, eventId: string, eventType: 'tournament' | 'series' | 'season'): Promise<{ success: boolean; data?: PlayerQualificationStatusDTO; error?: string }>;
-
-  /**
-   * Get player qualification history
-   */
-  getPlayerQualificationHistory(playerId: string): Promise<{ success: boolean; data?: QualificationHistoryDTO; error?: string }>;
-
-  /**
-   * Get qualification statistics for an event
-   */
-  getQualificationStats(eventId: string, eventType: 'tournament' | 'series' | 'season'): Promise<{ success: boolean; data?: QualificationStatsDTO; error?: string }>;
-
-  /**
-   * Validate qualification requirements
-   */
-  validateQualification(playerId: string, eventId: string, eventType: 'tournament' | 'series' | 'season'): Promise<{ success: boolean; data?: QualificationValidationDTO; error?: string }>;
-
-  /**
-   * Qualify player automatically based on points
-   */
-  qualifyPlayerByPoints(playerId: string, eventId: string, eventType: 'tournament' | 'series' | 'season', userId: string): Promise<{ success: boolean; data?: QualificationDTO; error?: string }>;
-
-  /**
-   * Qualify player manually
-   */
-  qualifyPlayerManually(playerId: string, eventId: string, eventType: 'tournament' | 'series' | 'season', notes: string, userId: string): Promise<{ success: boolean; data?: QualificationDTO; error?: string }>;
-
-  /**
-   * Process payment qualification
-   */
-  processPaymentQualification(playerId: string, eventId: string, eventType: 'tournament' | 'series' | 'season', paymentAmount: number, userId: string): Promise<{ success: boolean; data?: QualificationDTO; error?: string }>;
-
-  /**
-   * Disqualify player
-   */
-  disqualifyPlayer(qualificationId: string, reason: string, userId: string): Promise<{ success: boolean; error?: string }>;
-
-  /**
-   * Bulk qualify players
-   */
-  bulkQualifyPlayers(data: BulkQualificationDTO, userId: string): Promise<{ success: boolean; data?: QualificationDTO[]; error?: string }>;
-
-  /**
-   * Check if player is qualified
-   */
-  isPlayerQualified(playerId: string, eventId: string, eventType: 'tournament' | 'series' | 'season'): Promise<{ success: boolean; isQualified?: boolean; error?: string }>;
-
-  /**
-   * Get pending qualifications
-   */
-  getPendingQualifications(eventId?: string, eventType?: 'tournament' | 'series' | 'season'): Promise<{ success: boolean; data?: QualificationDTO[]; error?: string }>;
-
-  /**
-   * Get expired qualifications
-   */
-  getExpiredQualifications(eventId?: string, eventType?: 'tournament' | 'series' | 'season'): Promise<{ success: boolean; data?: QualificationDTO[]; error?: string }>;
-
-  /**
-   * Extend qualification deadline
-   */
-  extendQualificationDeadline(qualificationId: string, newDeadline: string, userId: string): Promise<{ success: boolean; error?: string }>;
-
-  /**
-   * Update payment status
-   */
-  updatePaymentStatus(qualificationId: string, paymentStatus: 'pending' | 'paid' | 'waived', userId: string): Promise<{ success: boolean; error?: string }>;
-
-  /**
-   * Get qualification summary
-   */
-  getQualificationSummary(id: string): Promise<{ success: boolean; data?: QualificationSummaryDTO; error?: string }>;
-
-  /**
-   * Check if qualification exists
-   */
-  qualificationExists(id: string): Promise<{ success: boolean; exists?: boolean; error?: string }>;
+  recordSeasonEvent(data: RecordSeasonEventDto): Promise<{ 
+    success: boolean; 
+    data?: any; 
+    error?: string 
+  }>;
 }

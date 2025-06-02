@@ -1,50 +1,93 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
 import { 
-  createLeague as createLeagueController, 
-  updateLeague as updateLeagueController, 
-  deleteLeague as deleteLeagueController, 
-  getLeagues as getLeaguesController, 
-  getLeague as getLeagueController,
-  searchLeagues as searchLeaguesController
+  createLeagueAction, 
+  updateLeagueAction, 
+  deleteLeagueAction, 
+  getAllLeaguesAction, 
+  getLeagueAction
 } from "@/src/presentation/adapters/nextjs/controllers/league.controller"
+import { CreateLeagueDTO, UpdateLeagueDTO, LeagueSearchDTO } from "@/src/core/application/dtos/league.dto"
 
-// Export controller methods with revalidation wrappers
 export async function createLeague(formData: FormData) {
-  const result = await createLeagueController(formData)
-  if (result.success) {
-    revalidatePath("/leagues")
+  try {
+    // Extract form data
+    const name = formData.get("name") as string
+    const description = formData.get("description") as string
+    const ownerId = formData.get("ownerId") as string
+    const isActive = formData.get("isActive") === "on"
+
+    // Validate required fields
+    if (!name.trim()) {
+      return { success: false, error: "League name is required" }
+    }
+
+    if (!ownerId) {
+      return { success: false, error: "Owner ID is required" }
+    }
+
+    // Convert to DTO
+    const data: CreateLeagueDTO = {
+      name,
+      description,
+      ownerId,
+      isActive
+    }
+
+    return await createLeagueAction(data)
+  } catch (error) {
+    console.error("Error creating league:", error)
+    return { success: false, error: "Failed to create league" }
   }
-  return result
 }
 
 export async function updateLeague(id: string, formData: FormData) {
-  const result = await updateLeagueController(id, formData)
-  if (result.success) {
-    revalidatePath("/leagues")
-    revalidatePath(`/leagues/${id}`)
+  try {
+    // Extract form data
+    const name = formData.get("name") as string
+    const description = formData.get("description") as string
+    const isActive = formData.get("isActive") === "on"
+
+    // Validate required fields
+    if (!name.trim()) {
+      return { success: false, error: "League name is required" }
+    }
+
+    // Convert to DTO
+    const data: UpdateLeagueDTO = {
+      id,
+      name,
+      description,
+      isActive
+    }
+
+    return await updateLeagueAction(data)
+  } catch (error) {
+    console.error("Error updating league:", error)
+    return { success: false, error: "Failed to update league" }
   }
-  return result
 }
 
 export async function deleteLeague(id: string, userId: string) {
-  const result = await deleteLeagueController(id, userId)
-  if (result.success) {
-    revalidatePath("/leagues")
-  }
-  return result
+  return await deleteLeagueAction(id, userId)
 }
 
 export async function getLeague(id: string) {
-  return await getLeagueController(id)
+  return await getLeagueAction(id)
 }
 
 export async function getLeagues() {
-  const result = await getLeaguesController()
-  return result
+  return await getAllLeaguesAction()
 }
 
 export async function searchLeagues(searchParams: any) {
-  return await searchLeaguesController(searchParams)
+  const search: LeagueSearchDTO = {
+    searchTerm: searchParams.searchTerm,
+    ownerId: searchParams.ownerId,
+    isActive: searchParams.isActive === "true" ? true : undefined,
+    page: searchParams.page ? parseInt(searchParams.page) : undefined,
+    pageSize: searchParams.pageSize ? parseInt(searchParams.pageSize) : undefined
+  }
+  
+  return await getAllLeaguesAction(search)
 }
