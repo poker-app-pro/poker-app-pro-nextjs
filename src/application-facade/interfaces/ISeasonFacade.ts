@@ -4,8 +4,10 @@ import {
   SeasonDTO, 
   SeasonListDTO, 
   SeasonSearchDTO,
-  SeasonWithLeagueDTO
-} from '@/src/core/application/dtos/season.dto';
+  SeasonSummaryDTO,
+  SeasonDetailsDTO,
+  SeasonStatsDTO
+} from '@/src/core/application/dtos/seasons.dto';
 
 /**
  * Season Facade Interface
@@ -33,9 +35,24 @@ export interface ISeasonFacade {
   getSeason(id: string): Promise<{ success: boolean; data?: SeasonDTO; error?: string }>;
 
   /**
-   * Get all seasons
+   * Get all seasons with optional search parameters
    */
   getAllSeasons(search?: SeasonSearchDTO): Promise<{ success: boolean; data?: SeasonListDTO; error?: string }>;
+
+  /**
+   * Get season summary
+   */
+  getSeasonSummary(id: string): Promise<{ success: boolean; data?: SeasonSummaryDTO; error?: string }>;
+
+  /**
+   * Get season details including series, tournaments, and standings
+   */
+  getSeasonDetails(id: string): Promise<{ success: boolean; data?: SeasonDetailsDTO; error?: string }>;
+
+  /**
+   * Get season statistics
+   */
+  getSeasonStats(id: string): Promise<{ success: boolean; data?: SeasonStatsDTO; error?: string }>;
 
   /**
    * Get seasons by league
@@ -43,22 +60,22 @@ export interface ISeasonFacade {
   getSeasonsByLeague(leagueId: string): Promise<{ success: boolean; data?: SeasonDTO[]; error?: string }>;
 
   /**
-   * Get active seasons
+   * Get active season for a league
    */
-  getActiveSeasons(leagueId?: string): Promise<{ success: boolean; data?: SeasonDTO[]; error?: string }>;
+  getActiveSeasonForLeague(leagueId: string): Promise<{ success: boolean; data?: SeasonDTO; error?: string }>;
 
   /**
-   * Get season with league details
+   * Activate a season
    */
-  getSeasonWithLeague(id: string): Promise<{ success: boolean; data?: SeasonWithLeagueDTO; error?: string }>;
+  activateSeason(id: string): Promise<{ success: boolean; error?: string }>;
+
+  /**
+   * Deactivate a season
+   */
+  deactivateSeason(id: string): Promise<{ success: boolean; error?: string }>;
 
   /**
    * Check if season exists
    */
   seasonExists(id: string): Promise<{ success: boolean; exists?: boolean; error?: string }>;
-
-  /**
-   * Activate/Deactivate season
-   */
-  toggleSeasonStatus(id: string, isActive: boolean, userId: string): Promise<{ success: boolean; error?: string }>;
 }

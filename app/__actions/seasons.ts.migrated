@@ -1,0 +1,188 @@
+"use server";
+
+import { getSeasonFacade, getLeagueFacade } from "@/app/di-setup";
+import { CreateSeasonDTO, UpdateSeasonDTO } from "@/src/core/application/dtos/seasons.dto";
+import { getCurrentUser } from "aws-amplify/auth/server";
+import { cookies } from "next/headers";
+import { runWithAmplifyServerContext } from "@/lib/amplify-utils";
+
+/**
+ * Get all seasons
+ */
+export async function getSeasons() {
+  try {
+    const seasonFacade = getSeasonFacade();
+    const result = await seasonFacade.getAllSeasons();
+    return result;
+  } catch (error) {
+    console.error("Error getting all seasons:", error);
+    return { success: false, error: "Failed to get seasons" };
+  }
+}
+
+/**
+ * Get a season by ID
+ */
+export async function getSeasonById(id: string) {
+  try {
+    const seasonFacade = getSeasonFacade();
+    const result = await seasonFacade.getSeason(id);
+    
+    // For more detailed information, we could use getSeasonDetails instead
+    // const detailedResult = await seasonFacade.getSeasonDetails(id);
+    
+    return result;
+  } catch (error) {
+    console.error("Error getting season by ID:", error);
+    return { success: false, error: "Failed to get season" };
+  }
+}
+
+/**
+ * Create a new season
+ */
+export async function createSeason(formData: FormData) {
+  try {
+    // Extract form data
+    const name = formData.get("name") as string;
+    const leagueId = formData.get("leagueId") as string;
+    const startDate = formData.get("startDate") as string;
+    const endDateStr = formData.get("endDate") as string;
+    const endDate = endDateStr || undefined;
+    const description = formData.get("description") as string;
+    const isActive = formData.get("isActive") === "on";
+    const userId = formData.get("userId") as string;
+
+    // Validate required fields
+    if (!name.trim()) {
+      return { success: false, error: "Season name is required" };
+    }
+
+    if (!leagueId) {
+      return { success: false, error: "League is required" };
+    }
+
+    if (!startDate) {
+      return { success: false, error: "Start date is required" };
+    }
+
+    if (!userId) {
+      return { success: false, error: "User ID is required" };
+    }
+
+    // Validate end date is after start date
+    if (startDate && endDate && new Date(endDate) <= new Date(startDate)) {
+      return { success: false, error: "End date must be after start date" };
+    }
+
+    // Convert to DTO
+    const data: CreateSeasonDTO = {
+      name,
+      leagueId,
+      startDate,
+      endDate: endDate || startDate, // Ensure endDate is not undefined
+      description,
+      isActive
+    };
+
+    // Use the season facade to create the season
+    const seasonFacade = getSeasonFacade();
+    const result = await seasonFacade.createSeason(data);
+    return result;
+  } catch (error) {
+    console.error("Error creating season:", error);
+    return { success: false, error: "Failed to create season" };
+  }
+}
+
+/**
+ * Update an existing season
+ */
+export async function updateSeason(seasonId: string, formData: FormData) {
+  try {
+    // Get current user
+    const currentUser = await runWithAmplifyServerContext({
+      nextServerContext: { cookies },
+      operation: async (contextSpec) => getCurrentUser(contextSpec),
+    });
+    const userId = currentUser.userId;
+
+    // Extract form data
+    const name = formData.get("name") as string;
+    const startDate = formData.get("startDate") as string;
+    const endDateStr = formData.get("endDate") as string;
+    const endDate = endDateStr || undefined;
+    const description = formData.get("description") as string;
+    const isActive = formData.get("isActive") === "on";
+
+    // Validate required fields
+    if (!name.trim()) {
+      return { success: false, error: "Season name is required" };
+    }
+
+    if (!startDate) {
+      return { success: false, error: "Start date is required" };
+    }
+
+    // Validate end date is after start date
+    if (startDate && endDate && new Date(endDate) <= new Date(startDate)) {
+      return { success: false, error: "End date must be after start date" };
+    }
+
+    // Convert to DTO
+    const data: UpdateSeasonDTO = {
+      id: seasonId,
+      name,
+      startDate,
+      endDate: endDate || startDate, // Ensure endDate is not undefined
+      description,
+      isActive
+    };
+
+    // Use the season facade to update the season
+    const seasonFacade = getSeasonFacade();
+    const result = await seasonFacade.updateSeason(data);
+    return result;
+  } catch (error) {
+    console.error("Error updating season:", error);
+    return { success: false, error: "Failed to update season" };
+  }
+}
+
+/**
+ * Delete a season
+ */
+export async function deleteSeason(seasonId: string) {
+  try {
+    // Get current user
+    const currentUser = await runWithAmplifyServerContext({
+      nextServerContext: { cookies },
+      operation: async (contextSpec) => getCurrentUser(contextSpec),
+    });
+    const userId = currentUser.userId;
+
+    // Use the season facade to delete the season
+    const seasonFacade = getSeasonFacade();
+    const result = await seasonFacade.deleteSeason(seasonId, userId);
+    return result;
+  } catch (error) {
+    console.error("Error deleting season:", error);
+    return { success: false, error: "Failed to delete season" };
+  }
+}
+
+/**
+ * Get all leagues
+ */
+export async function getLeagues() {
+  try {
+    // Note: We would need to create a LeagueFacade interface and implementation
+    // For now, we'll assume it exists and has a getAllLeagues method
+    const leagueFacade = getLeagueFacade();
+    const result = await leagueFacade.getAllLeagues();
+    return result;
+  } catch (error) {
+    console.error("Error getting all leagues:", error);
+    return { success: false, error: "Failed to get leagues" };
+  }
+}

@@ -1,0 +1,135 @@
+"use server"
+
+import { 
+  getSeriesFacade, 
+  getSeasonFacade 
+} from "@/app/di-setup"
+import { CreateSeriesDTO } from "@/src/core/application/dtos/series.dto"
+
+/**
+ * Create a new series
+ */
+export async function createSeries(formData: FormData) {
+  try {
+    // Extract form data
+    const name = formData.get("name") as string
+    const seasonId = formData.get("seasonId") as string
+    const startDate = new Date(formData.get("startDate") as string)
+    const endDateStr = formData.get("endDate") as string
+    const endDate = endDateStr ? new Date(endDateStr) : new Date(startDate.getTime() + 90 * 24 * 60 * 60 * 1000) // Default to 90 days after start date
+    const description = formData.get("description") as string
+    const isActive = formData.get("isActive") === "on"
+
+    // Convert to DTO
+    const data: CreateSeriesDTO = {
+      name,
+      seasonId,
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
+      description,
+      isActive
+    };
+
+    // Use the series facade to create the series
+    const seriesFacade = getSeriesFacade();
+    const result = await seriesFacade.createSeries(data);
+    return result;
+  } catch (error) {
+    console.error("Error creating series:", error)
+    return { success: false, error: "Failed to create series" }
+  }
+}
+
+/**
+ * Delete a series
+ */
+export async function deleteSeries(id: string, userId: string) {
+  try {
+    const seriesFacade = getSeriesFacade();
+    const result = await seriesFacade.deleteSeries(id, userId);
+    return result;
+  } catch (error) {
+    console.error("Error deleting series:", error);
+    return { success: false, error: "Failed to delete series" };
+  }
+}
+
+/**
+ * Get all series
+ */
+export async function getSeries() {
+  try {
+    const seriesFacade = getSeriesFacade();
+    const result = await seriesFacade.getAllSeries();
+    return result;
+  } catch (error) {
+    console.error("Error getting all series:", error);
+    return { success: false, error: "Failed to get series" };
+  }
+}
+
+/**
+ * Get a series by ID
+ */
+export async function getSeriesById(id: string) {
+  try {
+    const seriesFacade = getSeriesFacade();
+    const result = await seriesFacade.getSeries(id);
+    return result;
+  } catch (error) {
+    console.error("Error getting series by ID:", error);
+    return { success: false, error: "Failed to get series" };
+  }
+}
+
+/**
+ * Get series by season
+ */
+export async function getSeriesBySeason(seasonId: string) {
+  try {
+    const seriesFacade = getSeriesFacade();
+    const result = await seriesFacade.getSeriesBySeason(seasonId);
+    return result;
+  } catch (error) {
+    console.error("Error getting series by season:", error);
+    return { success: false, error: "Failed to get series by season" };
+  }
+}
+
+/**
+ * Get tournaments by series
+ * Note: This would typically be in a tournament facade, but for this example
+ * we're using the series facade to get the series details which includes tournaments
+ */
+export async function getTournamentsBySeries(seriesId: string) {
+  try {
+    const seriesFacade = getSeriesFacade();
+    const result = await seriesFacade.getSeriesDetails(seriesId);
+    
+    if (result.success && result.data) {
+      return {
+        success: true,
+        data: result.data.tournaments || []
+      };
+    }
+    
+    return { success: false, error: "Failed to get tournaments by series" };
+  } catch (error) {
+    console.error("Error getting tournaments by series:", error);
+    return { success: false, error: "Failed to get tournaments by series" };
+  }
+}
+
+/**
+ * Get all seasons
+ */
+export async function getSeasons() {
+  try {
+    const seasonFacade = getSeasonFacade();
+    const result = await seasonFacade.getAllSeasons();
+    return result;
+  } catch (error) {
+    console.error("Error getting all seasons:", error);
+    return { success: false, error: "Failed to get seasons" };
+  }
+}

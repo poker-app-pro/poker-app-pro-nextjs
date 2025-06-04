@@ -5,6 +5,7 @@ import {
   SeriesListDTO, 
   SeriesSearchDTO,
   SeriesSummaryDTO,
+  SeriesDetailsDTO,
   SeriesStatsDTO
 } from '@/src/core/application/dtos/series.dto';
 
@@ -34,24 +35,9 @@ export interface ISeriesFacade {
   getSeries(id: string): Promise<{ success: boolean; data?: SeriesDTO; error?: string }>;
 
   /**
-   * Get all series
+   * Get all series with optional search parameters
    */
   getAllSeries(search?: SeriesSearchDTO): Promise<{ success: boolean; data?: SeriesListDTO; error?: string }>;
-
-  /**
-   * Get series by season
-   */
-  getSeriesBySeason(seasonId: string): Promise<{ success: boolean; data?: SeriesDTO[]; error?: string }>;
-
-  /**
-   * Get series by league
-   */
-  getSeriesByLeague(leagueId: string): Promise<{ success: boolean; data?: SeriesDTO[]; error?: string }>;
-
-  /**
-   * Get active series
-   */
-  getActiveSeries(seasonId?: string): Promise<{ success: boolean; data?: SeriesDTO[]; error?: string }>;
 
   /**
    * Get series summary
@@ -59,17 +45,37 @@ export interface ISeriesFacade {
   getSeriesSummary(id: string): Promise<{ success: boolean; data?: SeriesSummaryDTO; error?: string }>;
 
   /**
+   * Get series details including tournaments and standings
+   */
+  getSeriesDetails(id: string): Promise<{ success: boolean; data?: SeriesDetailsDTO; error?: string }>;
+
+  /**
    * Get series statistics
    */
   getSeriesStats(id: string): Promise<{ success: boolean; data?: SeriesStatsDTO; error?: string }>;
 
   /**
+   * Get series by season
+   */
+  getSeriesBySeason(seasonId: string): Promise<{ success: boolean; data?: SeriesDTO[]; error?: string }>;
+
+  /**
+   * Get active series for a season
+   */
+  getActiveSeriesForSeason(seasonId: string): Promise<{ success: boolean; data?: SeriesDTO; error?: string }>;
+
+  /**
+   * Activate a series
+   */
+  activateSeries(id: string): Promise<{ success: boolean; error?: string }>;
+
+  /**
+   * Deactivate a series
+   */
+  deactivateSeries(id: string): Promise<{ success: boolean; error?: string }>;
+
+  /**
    * Check if series exists
    */
   seriesExists(id: string): Promise<{ success: boolean; exists?: boolean; error?: string }>;
-
-  /**
-   * Activate/Deactivate series
-   */
-  toggleSeriesStatus(id: string, isActive: boolean, userId: string): Promise<{ success: boolean; error?: string }>;
 }

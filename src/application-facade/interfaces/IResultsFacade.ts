@@ -1,123 +1,78 @@
-import { GameType } from '@/src/core/domain/entities/game-result.entity';
+import { 
+  CreateResultDTO, 
+  UpdateResultDTO, 
+  ResultDTO, 
+  ResultListDTO, 
+  ResultSearchDTO,
+  ResultSummaryDTO,
+  TournamentResultsDTO,
+  PlayerResultsDTO,
+  BulkResultsDTO,
+  ResultsStatsDTO
+} from '@/src/core/application/dtos/results.dto';
 
 /**
  * Results Facade Interface
  * Framework-agnostic interface for tournament results operations
  */
-
-export interface PlayerResultDto {
-  id: string;
-  playerId: string;
-  playerName: string;
-  position: number | null;
-  points: number;
-  bountyCount: number;
-  isConsolation: boolean;
-}
-
-export interface TournamentResultDto {
-  id: string;
-  name: string;
-  seriesName: string;
-  gameTime: string;
-  location: string;
-  totalPlayers: number;
-  winner: string;
-  createdAt: string;
-}
-
-export interface TournamentResultDetailsDto {
-  id: string;
-  name: string;
-  seriesName: string;
-  seasonName: string;
-  leagueName: string;
-  gameTime: string;
-  location: string;
-  buyIn: number;
-  prizePool: number;
-  totalPlayers: number;
-  results: PlayerResultDto[];
-}
-
-export interface SaveGameResultsDto {
-  seriesId: string;
-  totalPlayers: number;
-  gameTime: string;
-  gameType: GameType;
-  rankings: {
-    id: string;
-    name: string;
-    position: number;
-    isNew?: boolean;
-  }[];
-  bounties: {
-    id: string;
-    name: string;
-    bountyCount?: number;
-  }[];
-  consolation: {
-    id: string;
-    name: string;
-  }[];
-  temporaryPlayers: {
-    id: string;
-    name: string;
-  }[];
-  userId: string;
-}
-
-export interface UpdateTournamentResultDto {
-  id: string;
-  name: string;
-  gameTime: string;
-  location: string;
-  buyIn: number;
-}
-
 export interface IResultsFacade {
   /**
-   * Save game results
+   * Create a new result
    */
-  saveGameResults(data: SaveGameResultsDto): Promise<{ 
-    success: boolean; 
-    data?: any; 
-    error?: string;
-    message?: string;
-  }>;
+  createResult(data: CreateResultDTO): Promise<{ success: boolean; data?: ResultDTO; error?: string }>;
 
   /**
-   * Get all tournament results
+   * Update an existing result
    */
-  getTournamentResults(): Promise<{ 
-    success: boolean; 
-    data?: TournamentResultDto[]; 
-    error?: string 
-  }>;
+  updateResult(data: UpdateResultDTO): Promise<{ success: boolean; data?: ResultDTO; error?: string }>;
 
   /**
-   * Get tournament result details
+   * Delete a result
    */
-  getTournamentResultDetails(id: string): Promise<{ 
-    success: boolean; 
-    data?: TournamentResultDetailsDto; 
-    error?: string 
-  }>;
+  deleteResult(id: string, userId: string): Promise<{ success: boolean; error?: string }>;
 
   /**
-   * Update tournament result
+   * Get a result by ID
    */
-  updateTournamentResult(data: UpdateTournamentResultDto): Promise<{ 
-    success: boolean; 
-    data?: any; 
-    error?: string 
-  }>;
+  getResult(id: string): Promise<{ success: boolean; data?: ResultDTO; error?: string }>;
 
   /**
-   * Delete tournament result
+   * Get all results with optional search parameters
    */
-  deleteTournamentResult(id: string, userId: string): Promise<{ 
-    success: boolean; 
-    error?: string 
-  }>;
+  getAllResults(search?: ResultSearchDTO): Promise<{ success: boolean; data?: ResultListDTO; error?: string }>;
+
+  /**
+   * Get result summary
+   */
+  getResultSummary(id: string): Promise<{ success: boolean; data?: ResultSummaryDTO; error?: string }>;
+
+  /**
+   * Get tournament results
+   */
+  getTournamentResults(tournamentId: string): Promise<{ success: boolean; data?: TournamentResultsDTO; error?: string }>;
+
+  /**
+   * Get player results
+   */
+  getPlayerResults(playerId: string): Promise<{ success: boolean; data?: PlayerResultsDTO; error?: string }>;
+
+  /**
+   * Create bulk results
+   */
+  createBulkResults(data: BulkResultsDTO): Promise<{ success: boolean; data?: { successful: number; failed: number; errors: any[] }; error?: string }>;
+
+  /**
+   * Get results statistics
+   */
+  getResultsStats(leagueId?: string, seasonId?: string, seriesId?: string): Promise<{ success: boolean; data?: ResultsStatsDTO; error?: string }>;
+
+  /**
+   * Calculate points for a tournament
+   */
+  calculatePoints(tournamentId: string): Promise<{ success: boolean; data?: { updated: number }; error?: string }>;
+
+  /**
+   * Recalculate all points for a series
+   */
+  recalculateSeriesPoints(seriesId: string): Promise<{ success: boolean; data?: { updated: number }; error?: string }>;
 }
