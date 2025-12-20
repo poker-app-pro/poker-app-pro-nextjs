@@ -8,7 +8,7 @@ const config = {
     '**/?(*.)+(spec|test).ts'
   ],
   transform: {
-    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.ts$': 'ts-jest'
   },
   collectCoverageFrom: [
     'src/**/*.ts',
@@ -19,7 +19,8 @@ const config = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  moduleNameMapping: {
+
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
     '^@core/(.*)$': '<rootDir>/src/core/$1',
     '^@infrastructure/(.*)$': '<rootDir>/src/infrastructure/$1',
