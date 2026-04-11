@@ -66,3 +66,25 @@ variable "snapshot_schedule" {
     snapshot_comment  = optional(string)
   })
 }
+
+
+variable "ubuntu_template" {
+  description = "Optional IaC-managed Ubuntu cloud image template used for VM cloning"
+  type = object({
+    enabled          = bool
+    vmid             = number
+    name             = string
+    storage_pool     = string
+    snippets_storage = optional(string)
+    cloud_image_url  = string
+    ci_user          = string
+    ssh_public_key   = string
+    memory_mb        = optional(number)
+    cpu_cores        = optional(number)
+    cpu_sockets      = optional(number)
+    ssh_host         = string
+    ssh_port         = optional(number)
+    ssh_user         = string
+    ssh_private_key  = string
+  })
+}

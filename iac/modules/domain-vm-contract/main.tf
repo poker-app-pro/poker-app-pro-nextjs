@@ -1,9 +1,27 @@
 locals {
+  ubuntu_template_contract = {
+    enabled          = var.ubuntu_template.enabled
+    vmid             = var.ubuntu_template.vmid
+    name             = var.ubuntu_template.name
+    storage_pool     = var.ubuntu_template.storage_pool
+    snippets_storage = try(var.ubuntu_template.snippets_storage, var.ubuntu_template.storage_pool)
+    cloud_image_url  = var.ubuntu_template.cloud_image_url
+    ci_user          = var.ubuntu_template.ci_user
+    ssh_public_key   = var.ubuntu_template.ssh_public_key
+    memory_mb        = try(var.ubuntu_template.memory_mb, 2048)
+    cpu_cores        = try(var.ubuntu_template.cpu_cores, 2)
+    cpu_sockets      = try(var.ubuntu_template.cpu_sockets, 1)
+    ssh_host         = var.ubuntu_template.ssh_host
+    ssh_port         = try(var.ubuntu_template.ssh_port, 22)
+    ssh_user         = var.ubuntu_template.ssh_user
+    ssh_private_key  = var.ubuntu_template.ssh_private_key
+  }
+
   vm_contract = {
     node_name      = var.node_name
     vm_id          = var.vm.id
     vm_name        = var.vm.name
-    template       = var.vm.template
+    template       = local.ubuntu_template_contract.enabled ? local.ubuntu_template_contract.name : var.vm.template
     cpu_cores      = var.vm.cpu_cores
     cpu_sockets    = var.vm.cpu_sockets
     memory_mb      = var.vm.memory_mb

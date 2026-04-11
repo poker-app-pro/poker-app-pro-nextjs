@@ -5,6 +5,28 @@ proxmox_tls_insecure     = true
 
 node_name = "pve"
 
+ubuntu_template = {
+  enabled          = true
+  vmid             = 9000
+  name             = "ubuntu-24.04-cloudimg-template"
+  storage_pool     = "local-lvm"
+  snippets_storage = "local"
+  cloud_image_url  = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+  ci_user          = "ubuntu"
+  ssh_public_key   = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... you@example"
+  memory_mb        = 2048
+  cpu_cores        = 2
+  cpu_sockets      = 1
+  ssh_host         = "pve.example.com"
+  ssh_port         = 22
+  ssh_user         = "root"
+  ssh_private_key  = <<EOKEY
+-----BEGIN OPENSSH PRIVATE KEY-----
+<private-key-here>
+-----END OPENSSH PRIVATE KEY-----
+EOKEY
+}
+
 vm = {
   id             = 2100
   name           = "ubuntu-prod-01"

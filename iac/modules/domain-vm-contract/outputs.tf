@@ -1,3 +1,7 @@
+output "ubuntu_template_contract" {
+  value = local.ubuntu_template_contract
+}
+
 output "vm_contract" {
   value = local.vm_contract
 }

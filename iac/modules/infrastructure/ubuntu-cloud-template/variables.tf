@@ -1,0 +1,16 @@
+variable "enabled" { type = bool }
+variable "node_name" { type = string }
+variable "template_vmid" { type = number }
+variable "template_name" { type = string }
+variable "storage_pool" { type = string }
+variable "cloud_image_url" { type = string }
+variable "snippets_storage" { type = string }
+variable "ci_user" { type = string }
+variable "ssh_public_key" { type = string }
+variable "ssh_host" { type = string }
+variable "ssh_port" { type = number }
+variable "ssh_user" { type = string }
+variable "ssh_private_key" { type = string }
+variable "memory_mb" { type = number }
+variable "cpu_cores" { type = number }
+variable "cpu_sockets" { type = number }

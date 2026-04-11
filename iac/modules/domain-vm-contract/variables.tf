@@ -50,19 +50,44 @@ variable "vm" {
   }
 }
 
+variable "ubuntu_template" {
+  type = object({
+    enabled          = bool
+    vmid             = number
+    name             = string
+    storage_pool     = string
+    snippets_storage = optional(string)
+    cloud_image_url  = string
+    ci_user          = string
+    ssh_public_key   = string
+    memory_mb        = optional(number)
+    cpu_cores        = optional(number)
+    cpu_sockets      = optional(number)
+    ssh_host         = string
+    ssh_port         = optional(number)
+    ssh_user         = string
+    ssh_private_key  = string
+  })
+
+  validation {
+    condition     = var.ubuntu_template.vmid > 99
+    error_message = "ubuntu_template.vmid must be greater than 99."
+  }
+}
+
 variable "snapshot_schedule" {
   type = object({
-    enabled           = bool
-    minute            = number
-    hour              = number
-    retention         = number
-    ssh_host          = string
-    ssh_port          = optional(number)
-    ssh_user          = string
-    ssh_private_key   = string
-    cron_identifier   = optional(string)
-    snapshot_prefix   = optional(string)
-    snapshot_comment  = optional(string)
+    enabled          = bool
+    minute           = number
+    hour             = number
+    retention        = number
+    ssh_host         = string
+    ssh_port         = optional(number)
+    ssh_user         = string
+    ssh_private_key  = string
+    cron_identifier  = optional(string)
+    snapshot_prefix  = optional(string)
+    snapshot_comment = optional(string)
   })
 
   validation {

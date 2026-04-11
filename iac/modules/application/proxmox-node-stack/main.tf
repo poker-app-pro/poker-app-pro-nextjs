@@ -3,7 +3,29 @@ module "domain_contract" {
 
   node_name         = var.node_name
   vm                = var.vm
+  ubuntu_template   = var.ubuntu_template
   snapshot_schedule = var.snapshot_schedule
+}
+
+module "ubuntu_cloud_template" {
+  source = "../../infrastructure/ubuntu-cloud-template"
+
+  enabled          = module.domain_contract.ubuntu_template_contract.enabled
+  node_name        = module.domain_contract.vm_contract.node_name
+  template_vmid    = module.domain_contract.ubuntu_template_contract.vmid
+  template_name    = module.domain_contract.ubuntu_template_contract.name
+  storage_pool     = module.domain_contract.ubuntu_template_contract.storage_pool
+  snippets_storage = module.domain_contract.ubuntu_template_contract.snippets_storage
+  cloud_image_url  = module.domain_contract.ubuntu_template_contract.cloud_image_url
+  ci_user          = module.domain_contract.ubuntu_template_contract.ci_user
+  ssh_public_key   = module.domain_contract.ubuntu_template_contract.ssh_public_key
+  memory_mb        = module.domain_contract.ubuntu_template_contract.memory_mb
+  cpu_cores        = module.domain_contract.ubuntu_template_contract.cpu_cores
+  cpu_sockets      = module.domain_contract.ubuntu_template_contract.cpu_sockets
+  ssh_host         = module.domain_contract.ubuntu_template_contract.ssh_host
+  ssh_port         = module.domain_contract.ubuntu_template_contract.ssh_port
+  ssh_user         = module.domain_contract.ubuntu_template_contract.ssh_user
+  ssh_private_key  = module.domain_contract.ubuntu_template_contract.ssh_private_key
 }
 
 module "ubuntu_vm" {
@@ -27,6 +49,8 @@ module "ubuntu_vm" {
   balloon_mb     = module.domain_contract.vm_contract.balloon_mb
   start_on_boot  = module.domain_contract.vm_contract.start_on_boot
   agent_enabled  = module.domain_contract.vm_contract.agent_enabled
+
+  depends_on = [module.ubuntu_cloud_template]
 }
 
 module "nightly_snapshot_cron" {

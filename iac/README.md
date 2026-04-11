@@ -1,16 +1,17 @@
-# Proxmox IaC Stack (Ubuntu VM + Nightly Snapshots)
+# Proxmox IaC Stack (Ubuntu Template + VM + Nightly Snapshots)
 
 This folder contains a complete Terraform/OpenTofu Infrastructure-as-Code stack for:
 
 - Managing a Proxmox VE node.
-- Provisioning one Ubuntu VM from a cloud image template.
+- Creating/updating an Ubuntu cloud image template in Proxmox.
+- Provisioning one Ubuntu VM cloned from that template.
 - Enforcing a nightly snapshot policy on that VM.
 
 The codebase is structured with an onion-architecture-inspired layering model:
 
-- **Domain layer**: pure configuration contract + validation.
+- **Domain layer**: pure configuration contracts + validation.
 - **Application layer**: orchestration and use-case composition.
-- **Infrastructure layer**: provider-specific Proxmox and host automation resources.
+- **Infrastructure layer**: provider-specific Proxmox and node automation resources.
 
 ## Architecture
 
@@ -26,6 +27,7 @@ iac/
     ├── domain-vm-contract           # domain layer
     ├── application/proxmox-node-stack
     └── infrastructure
+        ├── ubuntu-cloud-template
         ├── proxmox-ubuntu-vm
         └── nightly-snapshot-cron
 ```
@@ -34,8 +36,7 @@ iac/
 
 1. Proxmox VE node reachable from the machine running Terraform.
 2. API token created in Proxmox (`Datastore.AllocateSpace`, `VM.Allocate`, `VM.Config.*`, `VM.Snapshot`).
-3. Ubuntu cloud image template already available in Proxmox.
-4. SSH access from Terraform runner to Proxmox host (for cron-based nightly snapshots).
+3. SSH access from Terraform runner to Proxmox host (for template prep and cron-based nightly snapshots).
 
 ## Quick start
 
@@ -48,20 +49,22 @@ terraform plan
 terraform apply
 ```
 
+## Ubuntu template management
+
+When `ubuntu_template.enabled = true`, the stack will:
+
+1. Download/update the Ubuntu cloud image on the Proxmox host.
+2. Create template VM (if missing) with cloud-init settings.
+3. Convert that VM to a Proxmox template.
+4. Clone the workload VM from that template.
+
+When `ubuntu_template.enabled = false`, VM cloning uses `vm.template` as provided.
+
 ## Nightly snapshots design
 
-The stack writes a cron entry on the Proxmox node that executes:
-
-```bash
-qm snapshot <vmid> nightly-YYYYMMDD-HHMM --description "nightly snapshot via terraform"
-```
-
-at the configured UTC time.
-
-Retention is enforced in the same cron line by pruning older `nightly-*` snapshots, keeping `snapshot_retention` most recent entries.
+The stack writes a cron entry on the Proxmox node that executes `qm snapshot` nightly and prunes old snapshots based on retention.
 
 ## Notes
 
 - Snapshot schedule runs on **UTC** by default for predictability.
-- If you prefer Proxmox backup jobs instead of snapshots, add a dedicated backup module and disable the cron module.
-- Use a dedicated automation account on the Proxmox host for SSH provisioning.
+- Use dedicated automation SSH credentials for template bootstrap and snapshot cron management.

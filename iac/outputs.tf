@@ -1,3 +1,13 @@
+output "template_managed" {
+  description = "Whether Ubuntu cloud template is managed by this stack"
+  value       = module.proxmox_node_stack.template_managed
+}
+
+output "template_name" {
+  description = "Ubuntu cloud template used for cloning"
+  value       = module.proxmox_node_stack.template_name
+}
+
 output "vm_id" {
   description = "Created Ubuntu VM ID"
   value       = module.proxmox_node_stack.vm_id

@@ -1,3 +1,11 @@
+output "template_managed" {
+  value = module.ubuntu_cloud_template.managed
+}
+
+output "template_name" {
+  value = module.ubuntu_cloud_template.template_name
+}
+
 output "vm_id" {
   value = module.ubuntu_vm.vm_id
 }
