@@ -1,0 +1,45 @@
+proxmox_api_url          = "https://pve.example.com:8006/api2/json"
+proxmox_api_token_id     = "terraform@pve!iac"
+proxmox_api_token_secret = "CHANGE_ME"
+proxmox_tls_insecure     = true
+
+node_name = "pve"
+
+vm = {
+  id             = 2100
+  name           = "ubuntu-prod-01"
+  template       = "ubuntu-24.04-cloudimg-template"
+  cpu_cores      = 4
+  cpu_sockets    = 1
+  memory_mb      = 8192
+  disk_gb        = 80
+  storage_pool   = "local-lvm"
+  bridge         = "vmbr0"
+  ip_cidr        = "192.168.10.40/24"
+  gateway        = "192.168.10.1"
+  ci_user        = "ubuntu"
+  ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... you@example"
+  search_domain  = "lab.local"
+  nameserver     = "1.1.1.1"
+  balloon_mb     = 2048
+  start_on_boot  = true
+  agent_enabled  = true
+}
+
+snapshot_schedule = {
+  enabled          = true
+  minute           = 0
+  hour             = 2
+  retention        = 14
+  ssh_host         = "pve.example.com"
+  ssh_port         = 22
+  ssh_user         = "root"
+  ssh_private_key  = <<EOKEY
+-----BEGIN OPENSSH PRIVATE KEY-----
+<private-key-here>
+-----END OPENSSH PRIVATE KEY-----
+EOKEY
+  cron_identifier  = "ubuntu-prod-01-nightly"
+  snapshot_prefix  = "nightly"
+  snapshot_comment = "nightly snapshot via terraform"
+}

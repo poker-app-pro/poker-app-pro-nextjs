@@ -1,0 +1,12 @@
+variable "enabled" { type = bool }
+variable "minute" { type = number }
+variable "hour" { type = number }
+variable "retention" { type = number }
+variable "vm_id" { type = number }
+variable "ssh_host" { type = string }
+variable "ssh_port" { type = number }
+variable "ssh_user" { type = string }
+variable "ssh_private_key" { type = string }
+variable "cron_identifier" { type = string }
+variable "snapshot_prefix" { type = string }
+variable "snapshot_comment" { type = string }
