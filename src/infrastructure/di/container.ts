@@ -1,6 +1,6 @@
-import { CalculatePointsUseCase } from "@/src/core/application/use-cases/game-result/calculate-points.use-case";
-import { CreateGameResultUseCase } from "@/src/core/application/use-cases/game-result/create-game-result.use-case";
-import { SearchPlayersUseCase } from "@/src/core/application/use-cases/player/search-players.use-case";
+import { CalculatePointsUseCase } from "../../core/application/use-cases/game-result/calculate-points.use-case";
+import { CreateGameResultUseCase } from "../../core/application/use-cases/game-result/create-game-result.use-case";
+import { SearchPlayersUseCase } from "../../core/application/use-cases/player/search-players.use-case";
 import { AmplifyGameResultRepository } from "../repositories/amplify-game-result.repository";
 import { AmplifyPlayerRepository } from "../repositories/amplify-player.repository";
 

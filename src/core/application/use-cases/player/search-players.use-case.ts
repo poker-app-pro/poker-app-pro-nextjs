@@ -1,4 +1,4 @@
-import { PlayerRepository } from "@/src/core/domain/repositories/player.repository";
+import { PlayerRepository } from "../../../domain/repositories/player.repository";
 
 export class SearchPlayersUseCase {
   constructor(private readonly repository: PlayerRepository) {}

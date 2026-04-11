@@ -1,6 +1,6 @@
-import { SearchPlayersUseCase } from "@/src/core/application/use-cases/player/search-players.use-case";
-import { CalculatePointsUseCase } from "@/src/core/application/use-cases/game-result/calculate-points.use-case";
-import { CreateGameResultUseCase } from "@/src/core/application/use-cases/game-result/create-game-result.use-case";
+import { SearchPlayersUseCase } from "../../../core/application/use-cases/player/search-players.use-case";
+import { CalculatePointsUseCase } from "../../../core/application/use-cases/game-result/calculate-points.use-case";
+import { CreateGameResultUseCase } from "../../../core/application/use-cases/game-result/create-game-result.use-case";
 
 const mockFindByNameTerm = jest.fn().mockResolvedValue([]);
 const mockSave = jest.fn().mockResolvedValue({ id: "test" });

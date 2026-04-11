@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { GameResultRepository } from "@/src/core/domain/repositories/game-result.repository";
+import { GameResultRepository } from "../../core/domain/repositories/game-result.repository";
 
 export class AmplifyGameResultRepository implements GameResultRepository {
   async save(result: Record<string, unknown>): Promise<Record<string, unknown>> {

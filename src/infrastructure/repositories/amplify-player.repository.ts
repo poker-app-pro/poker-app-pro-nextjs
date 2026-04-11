@@ -1,4 +1,4 @@
-import { PlayerRepository } from "@/src/core/domain/repositories/player.repository";
+import { PlayerRepository } from "../../core/domain/repositories/player.repository";
 
 export class AmplifyPlayerRepository implements PlayerRepository {
   async findByNameTerm(term: string): Promise<string[]> {

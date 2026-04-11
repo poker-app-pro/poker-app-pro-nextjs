@@ -1,4 +1,4 @@
-import { GameResultRepository } from "@/src/core/domain/repositories/game-result.repository";
+import { GameResultRepository } from "../../../domain/repositories/game-result.repository";
 
 export class CreateGameResultUseCase {
   constructor(private readonly repository: GameResultRepository) {}
